@@ -9,17 +9,20 @@ import {
   PluginSettingTab,
   Setting,
   TextComponent,
+  ToggleComponent,
 } from "obsidian";
 import * as CodeMirror from "codemirror";
 
 interface CursorLocationSettings {
   numberCursors: number;
-  displayRange: string;
+  selectionMode: string;
+  displayCount: boolean;
 }
 
 const DEFAULT_SETTINGS: CursorLocationSettings = {
   numberCursors: 1,
-  displayRange: "end",
+  selectionMode: "end",
+  displayCount: true,
 };
 
 export default class CursorLocation extends Plugin {
@@ -57,9 +60,9 @@ export default class CursorLocation extends Plugin {
 
   private cursorDisplay(selection: EditorSelection): string {
     let value: string;
-    if (this.settings.displayRange == "begin") {
+    if (this.settings.selectionMode == "begin") {
       value = this.cursorString(selection.anchor);
-    } else if (this.settings.displayRange == "end") {
+    } else if (this.settings.selectionMode == "end") {
       value = this.cursorString(selection.head);
     } else if (
       selection.anchor.ch == selection.head.ch &&
@@ -95,7 +98,7 @@ export default class CursorLocation extends Plugin {
         } else {
           display = selections.length.toString() + " cursors";
         }
-        if (editor.somethingSelected()) {
+        if (this.settings.displayCount && editor.somethingSelected()) {
           let selectionText = editor.getSelection();
           display +=
             " (" +
@@ -154,38 +157,60 @@ class CursorLocationSettingTab extends PluginSettingTab {
       attr: { style: "color:red" },
     });
 
-    let displayRange = new Setting(containerEl)
-      .setName("Display Selection")
+    let selectionMode = new Setting(containerEl)
+      .setName("Selection Mode")
       .setDesc(
-        "Display the just the begining, just the end, " +
+        "Display the just the beginning, just the end, " +
           "or the full range of a selection."
       )
       .addDropdown((cb) =>
         cb
-          .addOption("begin", "Begining")
+          .addOption("begin", "Beginning")
           .addOption("end", "End")
           .addOption("full", "Full Selection")
           .setValue(
-            this.plugin.settings.displayRange || DEFAULT_SETTINGS.displayRange
+            this.plugin.settings.selectionMode || DEFAULT_SETTINGS.selectionMode
           )
           .onChange(async (value) => {
             console.log("Changing range display to " + value);
-            this.plugin.settings.displayRange = value;
+            this.plugin.settings.selectionMode = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    let displayCount = new Setting(containerEl)
+      .setName("Display Count")
+      .setDesc("Display the total number of characters selected.")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.displayCount != null
+              ? this.plugin.settings.displayCount
+              : DEFAULT_SETTINGS.displayCount
+          )
+          .onChange(async (value) => {
+            console.log("Chanign display count visiblity to " + value);
+            this.plugin.settings.displayCount = value;
             await this.plugin.saveSettings();
           })
       );
 
     new Setting(containerEl)
       .setName("Reset")
-      .setDesc("Reset number of cursors to " + DEFAULT_SETTINGS.numberCursors)
+      .setDesc("Reset settings to default values.")
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async (evt) => {
-          let textComponent: TextComponent = cursorNumber
+          let numberCursorsComponent: TextComponent = cursorNumber
             .components[0] as TextComponent;
-          textComponent.setValue(DEFAULT_SETTINGS.numberCursors.toString());
-          let dropdownComponent: DropdownComponent = displayRange
+          numberCursorsComponent.setValue(
+            DEFAULT_SETTINGS.numberCursors.toString()
+          );
+          let selectionModeComponent: DropdownComponent = selectionMode
             .components[0] as DropdownComponent;
-          dropdownComponent.setValue(DEFAULT_SETTINGS.displayRange);
+          selectionModeComponent.setValue(DEFAULT_SETTINGS.selectionMode);
+          let displayCountComponent: ToggleComponent = displayCount
+            .components[0] as ToggleComponent;
+          displayCountComponent.setValue(DEFAULT_SETTINGS.displayCount);
           warningSection.setText("");
           this.plugin.settings = DEFAULT_SETTINGS;
           await this.plugin.saveSettings();
