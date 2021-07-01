@@ -1,112 +1,40 @@
-import { App, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, EditorPosition, EditorSelection, MarkdownView, Plugin } from 'obsidian';
+import * as CodeMirror from "codemirror";
 
-interface MyPluginSettings {
-	mySetting: string;
-}
-
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class CursorLocation extends Plugin {
+	private cursorStatusBar: HTMLElement;
 
 	async onload() {
-		console.log('loading plugin');
-
-		await this.loadSettings();
-
-		this.addRibbonIcon('dice', 'Sample Plugin', () => {
-			new Notice('This is a notice!');
-		});
-
-		this.addStatusBarItem().setText('Status Bar Text');
-
-		this.addCommand({
-			id: 'open-sample-modal',
-			name: 'Open Sample Modal',
-			// callback: () => {
-			// 	console.log('Simple Callback');
-			// },
-			checkCallback: (checking: boolean) => {
-				let leaf = this.app.workspace.activeLeaf;
-				if (leaf) {
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-					return true;
-				}
-				return false;
-			}
-		});
-
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		console.log('loading Cursor Location plugin');
 
 		this.registerCodeMirror((cm: CodeMirror.Editor) => {
-			console.log('codemirror', cm);
+			cm.on("cursorActivity", this.updateCursor);
 		});
 
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.updateCursor(this.getEditor())
 	}
 
-	onunload() {
-		console.log('unloading plugin');
+	private getEditor(): Editor {
+		return this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 	}
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	private cursorString(cursor: EditorPosition): string {
+		return cursor.ch + ":" + (cursor.line + 1)
 	}
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		let {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		let {containerEl} = this;
-
-		containerEl.empty();
-
-		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue('')
-				.onChange(async (value) => {
-					console.log('Secret: ' + value);
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
+	private updateCursor = (editor: CodeMirror.Editor | Editor): void => {
+		if (editor) {
+			let cursor = editor.getCursor();
+			if (!this.cursorStatusBar) {
+				this.cursorStatusBar = this.addStatusBarItem();
+			}
+			let selections = ""
+			// this.getEditor()?.listSelections()?.forEach(selection => {
+			// 	selections += "(" + this.cursorString(selection.anchor) + "//" + this.cursorString(selection.head) + ")"
+			// })
+			this.cursorStatusBar.setText(
+				this.cursorString(cursor) + "/" + editor.lineCount() + " " + selections
+			);
+		}
 	}
 }
