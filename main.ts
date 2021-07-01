@@ -89,7 +89,7 @@ export default class CursorLocation extends Plugin {
         if (selections.length == 1) {
           let value: string = this.cursorDisplay(selections[0]);
           display = value + "/" + editor.lineCount();
-        } else if (selections.length < this.settings.numberCursors) {
+        } else if (selections.length <= this.settings.numberCursors) {
           let cursorStrings: string[] = [];
           selections.forEach((value) => {
             cursorStrings.push(this.cursorDisplay(value));
