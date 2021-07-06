@@ -4,16 +4,25 @@ This plugin for [Obsidian](https://obsidian.md/) displays the location of the cu
 ![](demo.gif)
 
 You can change the behavior via the Settings Tab.
-- `# of Cursors`: Number of cursor position that will display before switching to "N cursors"
+- `# of Cursors`: Number of cursor positions that will display before switching to "N cursors"
 - `Selection Mode`: How to display cursor position when a selection is made
   - `Beginning`: Show where cursor started
   - `End`: Show where a cursor is currently
   - `Full Selection`: Shows the range of the selection (`ch:line -> ch:line`).
     This will display a range that may go from later in the document to earlier if the selection is dragged backwards.
 - `Display Count`: Display the total number of characters selected or not
-- `Reset`: Reset the values to the default settings
+- `Individual Cursor Pattern`: Pattern to display location information for each cursor, 
+  - `ch` is the column the cursor is at in the current line
+  - `ln` is the current line number
+  - `ct` is the total line numbers in the file (count)
+  - If `ct` is the first or last of the three values, it will be removed when displaying a range.
+- `Cursor Seperator`: String to seperate multiple curor locations when `# of Cursors` is greater than 1. Consecutive whitespace is squashed to 1 space (per HTML rules).
+- `Range Seperator`: String to seperate the beginning and end of a selection when `Selection Mode` is set to `Full Selection`. Consecutive whitespace is squashed to 1 space (per HTML rules).
+- `Reset`: Reset all values to the default settings
 
-![](settings.png)
+![](settings1.png)
+![](settings2.png)
+![](settings3.png)
 
 ## Installation
 You can install the plugin via the Community Plugins tab within Obsidian. Just search for "Cursor Location"
