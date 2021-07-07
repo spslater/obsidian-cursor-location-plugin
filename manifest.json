@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-cursor-location-plugin",
 	"name": "Cursor Location",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"minAppVersion": "0.12.5",
 	"description": "This displays the location of the cursor (character and line number).",
 	"author": "Sean Slater",
