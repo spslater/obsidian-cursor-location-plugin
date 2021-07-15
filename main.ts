@@ -46,6 +46,13 @@ export default class CursorLocation extends Plugin {
     this.updateCursor(this.getEditor());
   }
 
+  onunload() {
+    console.log("unloading Cursor Location plugin");
+    this.app.workspace.iterateCodeMirrors((cm: CodeMirror.Editor) => {
+      cm.off("cursorActivity", this.updateCursor);
+    });
+  }
+
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
