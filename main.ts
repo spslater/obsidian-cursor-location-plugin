@@ -168,7 +168,7 @@ export default class CursorLocation extends Plugin {
             display += this.settings.cursorSeperator + lineCount;
           }
         } else {
-          display = selections.length.toString() + " cursors";
+          display = `${selections.length} cursors`;
         }
         if (editor.somethingSelected()) {
           display += this.totalDisplay(editor, selections);
@@ -188,8 +188,8 @@ class CursorLocationSettingTab extends PluginSettingTab {
   }
 
   private resetComponent(setting: Setting, value: any) {
-    let name = setting.nameEl.getText();
-    console.log("resetting '" + name + "' to '" + value.toString() + "'");
+    let nameEl = setting.settingEl.parentElement.childNodes[0] as HTMLHeadingElement;
+    console.log(`resetting '${nameEl.innerText}' to '${value}'`);
     let component = setting.components[0] as ValueComponent<any>;
     component.setValue(value);
   }
@@ -203,8 +203,8 @@ class CursorLocationSettingTab extends PluginSettingTab {
     cursorEl.createEl("h3", { text: "# of Cursors" });
     let numberCursors = new Setting(cursorEl)
       .setName(
-        "Number of cursor positions that will display " +
-          'in the status bar before switching to "N cursors".'
+        'Number of cursor positions that will display \
+          in the status bar before switching to "N cursors".'
       )
       .addText((text) =>
         text
@@ -212,21 +212,16 @@ class CursorLocationSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             let parsedValue = parseInt(value);
             if (!isNaN(parsedValue)) {
-              console.log(
-                "Updating number of cursors to display to " + parsedValue
-              );
+              console.log(`Updating number of cursors to display: ${parsedValue}`);
               warningSection.setText("");
               this.plugin.settings.numberCursors = parsedValue;
               await this.plugin.saveSettings();
             } else {
               console.log(
-                "Number of cursors to display not updated." +
-                  "Unable to parse new value into integer: " +
-                  value
+                "Number of cursors to display not updated.",
+                `Unable to parse new value into integer: ${value}`
               );
-              warningSection.setText(
-                value + " is not a number, unable to save."
-              );
+              warningSection.setText(`"${value}" is not a number, unable to save.`);
             }
           })
       );
@@ -235,15 +230,10 @@ class CursorLocationSettingTab extends PluginSettingTab {
       attr: { style: "color:red" },
     });
     new Setting(cursorEl)
-      .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.numberCursors + "'"
-      )
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.numberCursors}'`)
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
-          this.resetComponent(
-            numberCursors,
-            DEFAULT_SETTINGS.numberCursors.toString()
-          );
+          this.resetComponent(numberCursors, DEFAULT_SETTINGS.numberCursors.toString());
           warningSection.setText("");
           this.plugin.settings.numberCursors = DEFAULT_SETTINGS.numberCursors;
           await this.plugin.saveSettings();
@@ -254,19 +244,16 @@ class CursorLocationSettingTab extends PluginSettingTab {
     selectionEl.createEl("h3", { text: "Selecion Mode" });
     let selectionMode = new Setting(selectionEl)
       .setName(
-        "Display the just the beginning, just the end, " +
-          "or the full range of a selection."
+        "Display just the beginning, just the end, or the full range of a selection."
       )
       .addDropdown((cb) =>
         cb
           .addOption("begin", "Beginning")
           .addOption("end", "End")
           .addOption("full", "Full Selection")
-          .setValue(
-            this.plugin.settings.selectionMode || DEFAULT_SETTINGS.selectionMode
-          )
+          .setValue(this.plugin.settings.selectionMode || DEFAULT_SETTINGS.selectionMode)
           .onChange(async (value) => {
-            console.log("Changing range display to " + value);
+            console.log(`Changing range display to ${value}`);
             this.plugin.settings.selectionMode = value;
             await this.plugin.saveSettings();
           })
@@ -293,33 +280,25 @@ class CursorLocationSettingTab extends PluginSettingTab {
               : DEFAULT_SETTINGS.displayCharCount
           )
           .onChange(async (value) => {
-            console.log(
-              "Changing display character count visiblity to " + value
-            );
+            if (this.plugin.settings.displayCharCount != value) {
+              console.log(`Changing display character count visiblity to ${value}`);
+            }
             this.plugin.settings.displayCharCount = value;
             await this.plugin.saveSettings();
           })
       );
     new Setting(displayCharCountEl)
-      .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.displayCharCount + "'"
-      )
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.displayCharCount}'`)
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
-          this.resetComponent(
-            displayCharCount,
-            DEFAULT_SETTINGS.displayCharCount
-          );
-          this.plugin.settings.displayCharCount =
-            DEFAULT_SETTINGS.displayCharCount;
+          this.resetComponent(displayCharCount, DEFAULT_SETTINGS.displayCharCount);
+          this.plugin.settings.displayCharCount = DEFAULT_SETTINGS.displayCharCount;
           await this.plugin.saveSettings();
         })
       );
 
     let displayTotalLineCountEl = containerEl.createDiv();
-    displayTotalLineCountEl.createEl("h3", {
-      text: "Display Total Line Count",
-    });
+    displayTotalLineCountEl.createEl("h3", { text: "Display Total Line Count" });
     let displayTotalLineCount = new Setting(displayTotalLineCountEl)
       .setName("Display the total number of lines selected.")
       .addToggle((cb) =>
@@ -330,23 +309,19 @@ class CursorLocationSettingTab extends PluginSettingTab {
               : DEFAULT_SETTINGS.displayTotalLines
           )
           .onChange(async (value) => {
-            console.log("Changing display line count visiblity to " + value);
+            if (this.plugin.settings.displayTotalLines != value) {
+              console.log(`Changing display line count visiblity to ${value}`);
+            }
             this.plugin.settings.displayTotalLines = value;
             await this.plugin.saveSettings();
           })
       );
     new Setting(displayTotalLineCountEl)
-      .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.displayTotalLines + "'"
-      )
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.displayTotalLines}'`)
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
-          this.resetComponent(
-            displayTotalLineCount,
-            DEFAULT_SETTINGS.displayTotalLines
-          );
-          this.plugin.settings.displayTotalLines =
-            DEFAULT_SETTINGS.displayTotalLines;
+          this.resetComponent(displayTotalLineCount, DEFAULT_SETTINGS.displayTotalLines);
+          this.plugin.settings.displayTotalLines = DEFAULT_SETTINGS.displayTotalLines;
           await this.plugin.saveSettings();
         })
       );
@@ -355,26 +330,22 @@ class CursorLocationSettingTab extends PluginSettingTab {
     displayPatternEl.createEl("h3", { text: "Individual Cursor Pattern" });
     let displayPattern = new Setting(displayPatternEl)
       .setName(
-        "Pattern to display location information for each cursor, " +
-          "`ch` is the column the cursor is at in the current line, " +
-          "`ln` is the current line number, " +
-          "`ct` is the total line numbers in the file (count). " +
-          "If `ct` is the first or last of the three values, " +
-          "it will be removed when displaying a range."
+        "Pattern to display location information for each cursor, \
+          `ch` is the column the cursor is at in the current line, \
+          `ln` is the current line number, \
+          `ct` is the total line numbers in the file (count). \
+          If `ct` is the first or last of the three values, \
+          it will be removed when displaying a range."
       )
       .addText((text) => {
-        text
-          .setValue(this.plugin.settings.displayPattern)
-          .onChange(async (value) => {
-            console.log("Changing display pattern to " + value);
-            this.plugin.settings.displayPattern = value;
-            await this.plugin.saveSettings();
-          });
+        text.setValue(this.plugin.settings.displayPattern).onChange(async (value) => {
+          console.log(`Changing display pattern to ${value}`);
+          this.plugin.settings.displayPattern = value;
+          await this.plugin.saveSettings();
+        });
       });
     new Setting(displayPatternEl)
-      .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.displayPattern + "'"
-      )
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.displayPattern}'`)
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
           this.resetComponent(displayPattern, DEFAULT_SETTINGS.displayPattern);
@@ -387,31 +358,23 @@ class CursorLocationSettingTab extends PluginSettingTab {
     cursorSeperatorEl.createEl("h3", { text: "Cursor Seperator" });
     let cursorSeperator = new Setting(cursorSeperatorEl)
       .setName(
-        "String to seperate multiple curor locations when " +
-          "`# of Cursors` is greater than 1. Consecutive whitespace " +
-          "is squashed to 1 space (per HTML rules)."
+        "String to seperate multiple curor locations when \
+          `# of Cursors` is greater than 1. Consecutive whitespace \
+          is squashed to 1 space (per HTML rules)."
       )
       .addText((text) => {
-        text
-          .setValue(this.plugin.settings.cursorSeperator)
-          .onChange(async (value) => {
-            console.log("Changing cursor seperator to " + value);
-            this.plugin.settings.cursorSeperator = value;
-            await this.plugin.saveSettings();
-          });
+        text.setValue(this.plugin.settings.cursorSeperator).onChange(async (value) => {
+          console.log(`Changing cursor seperator to ${value}`);
+          this.plugin.settings.cursorSeperator = value;
+          await this.plugin.saveSettings();
+        });
       });
     new Setting(cursorSeperatorEl)
-      .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.cursorSeperator + "'"
-      )
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.cursorSeperator}'`)
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
-          this.resetComponent(
-            cursorSeperator,
-            DEFAULT_SETTINGS.cursorSeperator
-          );
-          this.plugin.settings.cursorSeperator =
-            DEFAULT_SETTINGS.cursorSeperator;
+          this.resetComponent(cursorSeperator, DEFAULT_SETTINGS.cursorSeperator);
+          this.plugin.settings.cursorSeperator = DEFAULT_SETTINGS.cursorSeperator;
           await this.plugin.saveSettings();
         })
       );
@@ -420,23 +383,19 @@ class CursorLocationSettingTab extends PluginSettingTab {
     rangeSeperatorEl.createEl("h3", { text: "Range Seperator" });
     let rangeSeperator = new Setting(rangeSeperatorEl)
       .setName(
-        "String to seperate the beginning and end of a selection " +
-          "when `Selection Mode` is set to `Full Selection`. " +
-          "Consecutive whitespace is squashed to 1 space (per HTML rules)"
+        "String to seperate the beginning and end of a selection \
+          when `Selection Mode` is set to `Full Selection`. \
+          Consecutive whitespace is squashed to 1 space (per HTML rules)"
       )
       .addText((text) => {
-        text
-          .setValue(this.plugin.settings.rangeSeperator)
-          .onChange(async (value) => {
-            console.log("Changing range seperator to " + value);
-            this.plugin.settings.rangeSeperator = value;
-            await this.plugin.saveSettings();
-          });
+        text.setValue(this.plugin.settings.rangeSeperator).onChange(async (value) => {
+          console.log(`Changing range seperator to ${value}`);
+          this.plugin.settings.rangeSeperator = value;
+          await this.plugin.saveSettings();
+        });
       });
     new Setting(rangeSeperatorEl)
-      .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.rangeSeperator + "'"
-      )
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.rangeSeperator}'`)
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
           this.resetComponent(rangeSeperator, DEFAULT_SETTINGS.rangeSeperator);
@@ -452,24 +411,12 @@ class CursorLocationSettingTab extends PluginSettingTab {
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
           console.log("Resetting all values to their defaults.");
-          this.resetComponent(
-            numberCursors,
-            DEFAULT_SETTINGS.numberCursors.toString()
-          );
+          this.resetComponent(numberCursors, DEFAULT_SETTINGS.numberCursors.toString());
           this.resetComponent(selectionMode, DEFAULT_SETTINGS.selectionMode);
-          this.resetComponent(
-            displayCharCount,
-            DEFAULT_SETTINGS.displayCharCount
-          );
-          this.resetComponent(
-            displayTotalLineCount,
-            DEFAULT_SETTINGS.displayTotalLines
-          );
+          this.resetComponent(displayCharCount, DEFAULT_SETTINGS.displayCharCount);
+          this.resetComponent(displayTotalLineCount, DEFAULT_SETTINGS.displayTotalLines);
           this.resetComponent(displayPattern, DEFAULT_SETTINGS.displayPattern);
-          this.resetComponent(
-            cursorSeperator,
-            DEFAULT_SETTINGS.cursorSeperator
-          );
+          this.resetComponent(cursorSeperator, DEFAULT_SETTINGS.cursorSeperator);
           this.resetComponent(rangeSeperator, DEFAULT_SETTINGS.rangeSeperator);
           warningSection.setText("");
           this.plugin.settings = DEFAULT_SETTINGS;
