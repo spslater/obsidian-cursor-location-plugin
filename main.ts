@@ -14,19 +14,21 @@ import * as CodeMirror from "codemirror";
 interface CursorLocationSettings {
   numberCursors: number;
   selectionMode: string;
-  displayCount: boolean;
+  displayCharCount: boolean;
   displayPattern: string;
   rangeSeperator: string;
   cursorSeperator: string;
+  displayTotalLines: boolean;
 }
 
 const DEFAULT_SETTINGS: CursorLocationSettings = {
   numberCursors: 1,
   selectionMode: "full",
-  displayCount: true,
+  displayCharCount: true,
   displayPattern: "ch:ln/ct",
   cursorSeperator: " / ",
   rangeSeperator: "->",
+  displayTotalLines: true,
 };
 
 export default class CursorLocation extends Plugin {
@@ -114,6 +116,37 @@ export default class CursorLocation extends Plugin {
     return value;
   }
 
+  private totalDisplay(
+    editor: CodeMirror.Editor | Editor,
+    selections: EditorSelection[]
+  ): string {
+    let totalsDisplay: string = "";
+    let textDisplay: string;
+    let lineDisplay: string;
+    if (this.settings.displayCharCount) {
+      let textSelection = editor.getSelection();
+      let textCount = textSelection.length - selections.length + 1;
+      textDisplay = `${textCount} selected`;
+    }
+    if (this.settings.displayTotalLines) {
+      let lineCount = 0;
+      selections.forEach((selection) => {
+        lineCount += Math.abs(selection.anchor.line - selection.head.line) + 1;
+      });
+      lineDisplay = `${lineCount} lines`;
+    }
+
+    if (this.settings.displayCharCount && this.settings.displayTotalLines) {
+      totalsDisplay = ` (${textDisplay} / ${lineDisplay})`;
+    } else if (this.settings.displayCharCount) {
+      totalsDisplay = ` (${textDisplay})`;
+    } else if (this.settings.displayTotalLines) {
+      totalsDisplay = ` (${lineDisplay})`;
+    }
+
+    return totalsDisplay;
+  }
+
   private updateCursor = (editor: CodeMirror.Editor | Editor): void => {
     if (editor) {
       if (!this.cursorStatusBar) {
@@ -137,12 +170,8 @@ export default class CursorLocation extends Plugin {
         } else {
           display = selections.length.toString() + " cursors";
         }
-        if (this.settings.displayCount && editor.somethingSelected()) {
-          let selectionText = editor.getSelection();
-          display +=
-            " (" +
-            (selectionText.length - selections.length + 1) +
-            " selected)";
+        if (editor.somethingSelected()) {
+          display += this.totalDisplay(editor, selections);
         }
         this.cursorStatusBar.setText(display);
       }
@@ -252,31 +281,72 @@ class CursorLocationSettingTab extends PluginSettingTab {
         })
       );
 
-    let displayCountEl = containerEl.createDiv();
-    displayCountEl.createEl("h3", { text: "Display Count" });
-    let displayCount = new Setting(displayCountEl)
+    let displayCharCountEl = containerEl.createDiv();
+    displayCharCountEl.createEl("h3", { text: "Display Character Count" });
+    let displayCharCount = new Setting(displayCharCountEl)
       .setName("Display the total number of characters selected.")
       .addToggle((cb) =>
         cb
           .setValue(
-            this.plugin.settings.displayCount != null
-              ? this.plugin.settings.displayCount
-              : DEFAULT_SETTINGS.displayCount
+            this.plugin.settings.displayCharCount != null
+              ? this.plugin.settings.displayCharCount
+              : DEFAULT_SETTINGS.displayCharCount
           )
           .onChange(async (value) => {
-            console.log("Chanign display count visiblity to " + value);
-            this.plugin.settings.displayCount = value;
+            console.log(
+              "Changing display character count visiblity to " + value
+            );
+            this.plugin.settings.displayCharCount = value;
             await this.plugin.saveSettings();
           })
       );
-    new Setting(displayCountEl)
+    new Setting(displayCharCountEl)
       .setName(
-        "Reset to default value of '" + DEFAULT_SETTINGS.displayCount + "'"
+        "Reset to default value of '" + DEFAULT_SETTINGS.displayCharCount + "'"
       )
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
-          this.resetComponent(displayCount, DEFAULT_SETTINGS.displayCount);
-          this.plugin.settings.displayCount = DEFAULT_SETTINGS.displayCount;
+          this.resetComponent(
+            displayCharCount,
+            DEFAULT_SETTINGS.displayCharCount
+          );
+          this.plugin.settings.displayCharCount =
+            DEFAULT_SETTINGS.displayCharCount;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let displayTotalLineCountEl = containerEl.createDiv();
+    displayTotalLineCountEl.createEl("h3", {
+      text: "Display Total Line Count",
+    });
+    let displayTotalLineCount = new Setting(displayTotalLineCountEl)
+      .setName("Display the total number of lines selected.")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.displayTotalLines != null
+              ? this.plugin.settings.displayTotalLines
+              : DEFAULT_SETTINGS.displayTotalLines
+          )
+          .onChange(async (value) => {
+            console.log("Changing display line count visiblity to " + value);
+            this.plugin.settings.displayTotalLines = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(displayTotalLineCountEl)
+      .setName(
+        "Reset to default value of '" + DEFAULT_SETTINGS.displayTotalLines + "'"
+      )
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(
+            displayTotalLineCount,
+            DEFAULT_SETTINGS.displayTotalLines
+          );
+          this.plugin.settings.displayTotalLines =
+            DEFAULT_SETTINGS.displayTotalLines;
           await this.plugin.saveSettings();
         })
       );
@@ -381,12 +451,20 @@ class CursorLocationSettingTab extends PluginSettingTab {
       .setName("Reset all settings to default values.")
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
+          console.log("Resetting all values to their defaults.");
           this.resetComponent(
             numberCursors,
             DEFAULT_SETTINGS.numberCursors.toString()
           );
           this.resetComponent(selectionMode, DEFAULT_SETTINGS.selectionMode);
-          this.resetComponent(displayCount, DEFAULT_SETTINGS.displayCount);
+          this.resetComponent(
+            displayCharCount,
+            DEFAULT_SETTINGS.displayCharCount
+          );
+          this.resetComponent(
+            displayTotalLineCount,
+            DEFAULT_SETTINGS.displayTotalLines
+          );
           this.resetComponent(displayPattern, DEFAULT_SETTINGS.displayPattern);
           this.resetComponent(
             cursorSeperator,
