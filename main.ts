@@ -45,11 +45,12 @@ export default class CursorLocation extends Plugin {
     this.registerCodeMirror((cm: CodeMirror.Editor) => {
       cm.on("cursorActivity", this.updateCursor);
     });
+    this.registerEvent(this.app.workspace.on("active-leaf-change", this.updateCursor));
 
     await this.loadSettings();
     this.addSettingTab(new CursorLocationSettingTab(this.app, this));
 
-    this.updateCursor(this.getEditor());
+    this.updateCursor();
   }
 
   onunload() {
@@ -157,7 +158,8 @@ export default class CursorLocation extends Plugin {
     return totalsDisplay;
   }
 
-  private updateCursor = (editor: CodeMirror.Editor | Editor): void => {
+  private updateCursor = (): void => {
+    let editor = this.getEditor();
     if (editor) {
       if (!this.cursorStatusBar) {
         this.cursorStatusBar = this.addStatusBarItem();
