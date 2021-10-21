@@ -47,6 +47,7 @@ export default class CursorLocation extends Plugin {
       cm.on("cursorActivity", this.updateCursor);
     });
     this.registerEvent(this.app.workspace.on("active-leaf-change", this.updateCursor));
+    this.registerEvent(this.app.workspace.on("layout-change", this.updateCursor));
 
     await this.loadSettings();
     this.addSettingTab(new CursorLocationSettingTab(this.app, this));
@@ -71,6 +72,10 @@ export default class CursorLocation extends Plugin {
 
   private getEditor(): Editor {
     return this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+  }
+
+  private inPreviewMode(): boolean {
+    return this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "preview";
   }
 
   private cursorString(
@@ -161,10 +166,12 @@ export default class CursorLocation extends Plugin {
 
   private updateCursor = (): void => {
     let editor = this.getEditor();
-    if (editor) {
-      if (!this.cursorStatusBar) {
-        this.cursorStatusBar = this.addStatusBarItem();
-      }
+    if (!this.cursorStatusBar) {
+      this.cursorStatusBar = this.addStatusBarItem();
+    }
+    if (this.inPreviewMode()) {
+      this.cursorStatusBar.setText("");
+    } else if (editor) {
       let selections: EditorSelection[] = editor.listSelections();
       let lineCount = editor.lineCount();
       if (selections && this.settings.numberCursors) {
