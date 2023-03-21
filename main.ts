@@ -8,8 +8,15 @@ import {
   PluginSettingTab,
   Setting,
   ValueComponent,
+  editorEditorField,
+  WorkspaceLeaf,
 } from "obsidian";
-import * as CodeMirror from "codemirror";
+import {
+  ViewUpdate,
+  PluginValue,
+  EditorView,
+  ViewPlugin,
+} from "@codemirror/view";
 
 interface CursorLocationSettings {
   [index: string]: number | string | boolean;
@@ -36,6 +43,35 @@ const DEFAULT_SETTINGS: CursorLocationSettings = {
   cursorLinePattern: "[lc]",
 };
 
+class EditorPlugin implements PluginValue {
+  hasPlugin: boolean;
+  view: EditorView;
+  private plugin: CursorLocation;
+
+  constructor(view: EditorView) {
+    this.view = view;
+    this.hasPlugin = false;
+  }
+
+  update(update: ViewUpdate): void {
+    const tr = update.transactions[0];
+    if (!tr) return;
+    console.log("tr", this.view.state.selection.ranges)
+    if (tr.isUserEvent("move")) {
+      console.log("moved cursors dawg")
+    }
+  }
+
+  addPlugin(plugin: CursorLocation) {
+    this.plugin = plugin;
+    this.hasPlugin = true;
+  }
+
+  destroy() {}
+}
+
+const editorPlugin = ViewPlugin.fromClass(EditorPlugin);
+
 export default class CursorLocation extends Plugin {
   private cursorStatusBar: HTMLElement;
   settings: CursorLocationSettings;
@@ -43,9 +79,13 @@ export default class CursorLocation extends Plugin {
   async onload() {
     console.log("loading Cursor Location plugin");
 
-    this.registerCodeMirror((cm: CodeMirror.Editor) => {
-      cm.on("cursorActivity", this.updateCursor);
-    });
+    // this.registerCodeMirror((cm: CodeMirror.Editor) => {
+    //   cm.on("cursorActivity", this.updateCursor);
+    // });
+
+    this.registerEditorExtension(editorPlugin);
+
+    this.registerEvent(this.app.workspace.on("editor-change", this.updateCursor));
     this.registerEvent(this.app.workspace.on("active-leaf-change", this.updateCursor));
     this.registerEvent(this.app.workspace.on("layout-change", this.updateCursor));
 
@@ -55,12 +95,24 @@ export default class CursorLocation extends Plugin {
     this.updateCursor();
   }
 
-  onunload() {
+  async onunload(): Promise<void> {
     console.log("unloading Cursor Location plugin");
-    this.app.workspace.iterateCodeMirrors((cm: CodeMirror.Editor) => {
-      cm.off("cursorActivity", this.updateCursor);
-    });
+    this.cursorStatusBar = null;
+    // this.app.workspace.iterateCodeMirrors((cm: CodeMirror.Editor) => {
+    //   cm.off("cursorActivity", this.updateCursor);
+    // });
   }
+
+  giveEditorPlugin(leaf: WorkspaceLeaf): void {
+    //@ts-expect-error
+    const editor = leaf?.view?.editor;
+    if (editor) {
+      const editorView = editor.cm as EditorView;
+      const editorPlug = editorView.plugin(editorPlugin);
+      editorPlug.addPlugin(this);
+    }
+  }
+
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -134,7 +186,7 @@ export default class CursorLocation extends Plugin {
   }
 
   private totalDisplay(
-    editor: CodeMirror.Editor | Editor,
+    editor: Editor,
     selections: EditorSelection[]
   ): string {
     let totalsDisplay: string = "";
@@ -165,37 +217,38 @@ export default class CursorLocation extends Plugin {
   }
 
   private updateCursor = (): void => {
-    let editor = this.getEditor();
-    if (!this.cursorStatusBar) {
-      this.cursorStatusBar = this.addStatusBarItem();
-    }
-    if (this.inPreviewMode()) {
-      this.cursorStatusBar.setText("");
-    } else if (editor) {
-      let selections: EditorSelection[] = editor.listSelections();
-      let lineCount = editor.lineCount();
-      if (selections && this.settings.numberCursors) {
-        let display: string;
-        if (selections.length == 1) {
-          display = this.cursorDisplay(selections[0], lineCount);
-        } else if (selections.length <= this.settings.numberCursors) {
-          let cursorStrings: string[] = [];
-          selections.forEach((value) => {
-            cursorStrings.push(this.cursorDisplay(value, lineCount, true, true));
-          });
-          display = cursorStrings.join(this.settings.cursorSeperator);
-          if (/ct/.test(this.settings.displayPattern)) {
-            display += this.settings.cursorSeperator + lineCount;
-          }
-        } else {
-          display = `${selections.length} cursors`;
-        }
-        if (editor.somethingSelected()) {
-          display += this.totalDisplay(editor, selections);
-        }
-        this.cursorStatusBar.setText(display);
-      }
-    }
+    console.log("updating cursor!!!")
+    // let editor = this.getEditor();
+    // if (!this.cursorStatusBar) {
+    //   this.cursorStatusBar = this.addStatusBarItem();
+    // }
+    // if (this.inPreviewMode()) {
+    //   this.cursorStatusBar.setText("");
+    // } else if (editor) {
+    //   let selections: EditorSelection[] = editor.listSelections();
+    //   let lineCount = editor.lineCount();
+    //   if (selections && this.settings.numberCursors) {
+    //     let display: string;
+    //     if (selections.length == 1) {
+    //       display = this.cursorDisplay(selections[0], lineCount);
+    //     } else if (selections.length <= this.settings.numberCursors) {
+    //       let cursorStrings: string[] = [];
+    //       selections.forEach((value) => {
+    //         cursorStrings.push(this.cursorDisplay(value, lineCount, true, true));
+    //       });
+    //       display = cursorStrings.join(this.settings.cursorSeperator);
+    //       if (/ct/.test(this.settings.displayPattern)) {
+    //         display += this.settings.cursorSeperator + lineCount;
+    //       }
+    //     } else {
+    //       display = `${selections.length} cursors`;
+    //     }
+    //     if (editor.somethingSelected()) {
+    //       display += this.totalDisplay(editor, selections);
+    //     }
+    //     this.cursorStatusBar.setText(display);
+    //   }
+    // }
   };
 }
 
