@@ -1,14 +1,9 @@
 import {
   App,
-  Editor,
-  EditorPosition,
-  EditorSelection,
-  MarkdownView,
   Plugin,
   PluginSettingTab,
   Setting,
   ValueComponent,
-  editorEditorField,
   WorkspaceLeaf,
 } from "obsidian";
 import {
@@ -17,6 +12,10 @@ import {
   EditorView,
   ViewPlugin,
 } from "@codemirror/view";
+import {
+  Text,
+  SelectionRange,
+} from "@codemirror/state";
 
 interface CursorLocationSettings {
   [index: string]: number | string | boolean;
@@ -43,9 +42,71 @@ const DEFAULT_SETTINGS: CursorLocationSettings = {
   cursorLinePattern: "[lc]",
 };
 
+const MIDDLEPATTERN = /^.*(ln|ch).*?ct.*?(ln|ch).*/i;
+const BEGINPATTERN = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
+const ENDPATTERN = /(.*(ln|ch).*?(ln|ch)).*?ct.*$/i;
+
+class CursorData {
+  aLn: number;
+  aCh: number;
+  hLn: number;
+  hCh: number;
+  lct: number;
+  tot: number;
+  tln: number;
+
+  constructor(range: SelectionRange, doc: Text) {
+    this.lct = doc.lines;
+
+    const aLine = doc.lineAt(range.from);
+    this.aLn = aLine.number;
+    this.aCh = range.from - aLine.from;
+
+    const hLine = doc.lineAt(range.head);
+    this.hLn = hLine.number;
+    this.hCh = range.head - hLine.from;
+
+    this.tot = range.to-range.from;
+    this.tln = Math.abs(this.aLn - this.hLn) + 1;
+  }
+
+  private partialString(
+    value: string,
+    skipTotal: boolean = false
+  ): string {
+    if (!skipTotal || MIDDLEPATTERN.test(value)) {
+      value = value.replace("ct", this.lct.toString());
+    } else if (BEGINPATTERN.test(value)) {
+      value = value.replace(BEGINPATTERN, "$1");
+    } else if (ENDPATTERN.test(value)) {
+      value = value.replace(ENDPATTERN, "$1");
+    }
+    return value;
+  }
+
+  public anchorString(
+    value: string,
+    skipTotal: boolean = false
+  ): string {
+    return this.partialString(value, skipTotal)
+      .replace("ch", this.aCh.toString())
+      .replace("ln", this.aLn.toString());
+  }
+
+  public headString(
+    value: string,
+    skipTotal: boolean = false
+  ): string {
+    return this.partialString(value, skipTotal)
+      .replace("ch", this.hCh.toString())
+      .replace("ln", this.hLn.toString());
+  }
+}
+
 class EditorPlugin implements PluginValue {
-  hasPlugin: boolean;
-  view: EditorView;
+  private hasPlugin: boolean;
+  private view: EditorView;
+  private showUpdates: boolean;
   private plugin: CursorLocation;
 
   constructor(view: EditorView) {
@@ -54,11 +115,44 @@ class EditorPlugin implements PluginValue {
   }
 
   update(update: ViewUpdate): void {
+    if (!this.hasPlugin) return;
     const tr = update.transactions[0];
     if (!tr) return;
-    console.log("tr", this.view.state.selection.ranges)
-    if (tr.isUserEvent("move")) {
-      console.log("moved cursors dawg")
+
+    let totalSelect: number = 0;
+    let totalLine: number = 0;
+    let selections: CursorData[] = [];
+    this.view.state.selection.ranges.forEach(range => {
+      const cur = new CursorData(range, this.view.state.doc)
+      totalSelect += cur.tot;
+      totalLine += cur.tln;
+      selections.push(cur);
+    });
+
+    const settings = this.plugin.settings;
+    const status = this.plugin.cursorStatusBar;
+    status.setText("");
+
+    if (selections && settings.numberCursors) {
+      let display: string;
+      if (selections.length == 1) {
+        display = this.cursorDisplay(selections[0]);
+      } else if (selections.length <= settings.numberCursors) {
+        let cursorStrings: string[] = [];
+        selections.forEach((value) => {
+          cursorStrings.push(this.cursorDisplay(value, true, true));
+        });
+        display = cursorStrings.join(settings.cursorSeperator);
+        if (/ct/.test(settings.displayPattern)) {
+          display += settings.cursorSeperator + this.view.state.doc.lines;
+        }
+      } else {
+        display = `${selections.length} cursors`;
+      }
+      if (totalSelect != 0) {
+        display += this.totalDisplay(totalSelect, totalLine);
+      }
+      status.setText(display);
     }
   }
 
@@ -68,43 +162,96 @@ class EditorPlugin implements PluginValue {
   }
 
   destroy() {}
+
+  private cursorDisplay(
+    selection: CursorData,
+    displayLines: boolean = false,
+    skipTotal: boolean = false
+  ): string {
+    let value: string;
+    const settings = this.plugin.settings;
+    if (settings.selectionMode == "begin") {
+      value = selection.anchorString(settings.displayPattern, skipTotal);
+    } else if (settings.selectionMode == "end") {
+      value = selection.headString(settings.displayPattern, skipTotal);
+    } else if (selection.tot == 0) {
+      value = selection.headString(settings.displayPattern, skipTotal);
+    } else {
+      value =
+        selection.anchorString(settings.displayPattern, true) +
+        settings.rangeSeperator +
+        selection.headString(settings.displayPattern, skipTotal);
+    }
+    if (displayLines && settings.displayCursorLines) {
+      let numberLines = Math.abs(selection.aLn - selection.hLn) + 1;
+      let cursorLinePattern = settings.cursorLinePattern;
+      value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
+    }
+    return value;
+  }
+
+  private totalDisplay(
+    textCount: number,
+    lineCount: number,
+  ): string {
+    const settings = this.plugin.settings;
+
+    let totalsDisplay: string = "";
+    let textDisplay: string;
+    let lineDisplay: string;
+    if (settings.displayCharCount) {
+      textDisplay = `${textCount} selected`;
+    }
+    if (settings.displayTotalLines) {
+      lineDisplay = `${lineCount} lines`;
+    }
+
+    if (settings.displayCharCount && settings.displayTotalLines) {
+      totalsDisplay = ` (${textDisplay} / ${lineDisplay})`;
+    } else if (settings.displayCharCount) {
+      totalsDisplay = ` (${textDisplay})`;
+    } else if (settings.displayTotalLines) {
+      totalsDisplay = ` (${lineDisplay})`;
+    }
+
+    return totalsDisplay;
+  }
 }
 
 const editorPlugin = ViewPlugin.fromClass(EditorPlugin);
 
 export default class CursorLocation extends Plugin {
-  private cursorStatusBar: HTMLElement;
+  public cursorStatusBar: HTMLElement;
   settings: CursorLocationSettings;
 
   async onload() {
     console.log("loading Cursor Location plugin");
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.addSettingTab(new CursorLocationSettingTab(this.app, this));
 
-    // this.registerCodeMirror((cm: CodeMirror.Editor) => {
-    //   cm.on("cursorActivity", this.updateCursor);
-    // });
+    this.cursorStatusBar = this.addStatusBarItem();
+    this.cursorStatusBar.setText("Cursor Location");
 
     this.registerEditorExtension(editorPlugin);
 
-    this.registerEvent(this.app.workspace.on("editor-change", this.updateCursor));
-    this.registerEvent(this.app.workspace.on("active-leaf-change", this.updateCursor));
-    this.registerEvent(this.app.workspace.on("layout-change", this.updateCursor));
+    this.app.workspace.onLayoutReady(() => {
+      this.giveEditorPlugin(this.app.workspace.getMostRecentLeaf());
+    });
 
-    await this.loadSettings();
-    this.addSettingTab(new CursorLocationSettingTab(this.app, this));
-
-    this.updateCursor();
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", async (leaf: WorkspaceLeaf) => {
+        this.giveEditorPlugin(leaf); 
+      })
+    );
   }
 
   async onunload(): Promise<void> {
     console.log("unloading Cursor Location plugin");
     this.cursorStatusBar = null;
-    // this.app.workspace.iterateCodeMirrors((cm: CodeMirror.Editor) => {
-    //   cm.off("cursorActivity", this.updateCursor);
-    // });
   }
 
   giveEditorPlugin(leaf: WorkspaceLeaf): void {
-    //@ts-expect-error
+    // @ts-expect-error
     const editor = leaf?.view?.editor;
     if (editor) {
       const editorView = editor.cm as EditorView;
@@ -113,143 +260,9 @@ export default class CursorLocation extends Plugin {
     }
   }
 
-
-  async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
-
   async saveSettings() {
     await this.saveData(this.settings);
   }
-
-  private getEditor(): Editor {
-    return this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-  }
-
-  private inPreviewMode(): boolean {
-    return this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "preview";
-  }
-
-  private cursorString(
-    cursor: EditorPosition,
-    totalCount: number,
-    skipTotal: boolean = false
-  ): string {
-    let value = this.settings.displayPattern;
-    let middlePattern = /^.*(ln|ch).*?ct.*?(ln|ch).*/i;
-    let beginPattern = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
-    let endPattern = /(.*(ln|ch).*?(ln|ch)).*?ct.*$/i;
-
-    if (!skipTotal || middlePattern.test(value)) {
-      value = value.replace("ct", totalCount.toString());
-    } else if (beginPattern.test(value)) {
-      value = value.replace(beginPattern, "$1");
-    } else if (endPattern.test(value)) {
-      value = value.replace(endPattern, "$1");
-    }
-
-    value = value
-      .replace("ch", cursor.ch.toString())
-      .replace("ln", (cursor.line + 1).toString());
-
-    return value;
-  }
-
-  private cursorDisplay(
-    selection: EditorSelection,
-    totalCount: number,
-    displayLines: boolean = false,
-    skipTotal: boolean = false
-  ): string {
-    let value: string;
-    if (this.settings.selectionMode == "begin") {
-      value = this.cursorString(selection.anchor, totalCount, skipTotal);
-    } else if (this.settings.selectionMode == "end") {
-      value = this.cursorString(selection.head, totalCount, skipTotal);
-    } else if (
-      selection.anchor.ch == selection.head.ch &&
-      selection.anchor.line == selection.head.line
-    ) {
-      value = this.cursorString(selection.head, totalCount, skipTotal);
-    } else {
-      value =
-        this.cursorString(selection.anchor, totalCount, true) +
-        this.settings.rangeSeperator +
-        this.cursorString(selection.head, totalCount, skipTotal);
-    }
-    if (displayLines && this.settings.displayCursorLines) {
-      let numberLines = Math.abs(selection.anchor.line - selection.head.line) + 1;
-      let cursorLinePattern = this.settings.cursorLinePattern;
-      value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
-    }
-    return value;
-  }
-
-  private totalDisplay(
-    editor: Editor,
-    selections: EditorSelection[]
-  ): string {
-    let totalsDisplay: string = "";
-    let textDisplay: string;
-    let lineDisplay: string;
-    if (this.settings.displayCharCount) {
-      let textSelection = editor.getSelection();
-      let textCount = textSelection.length - selections.length + 1;
-      textDisplay = `${textCount} selected`;
-    }
-    if (this.settings.displayTotalLines) {
-      let lineCount = 0;
-      selections.forEach((selection) => {
-        lineCount += Math.abs(selection.anchor.line - selection.head.line) + 1;
-      });
-      lineDisplay = `${lineCount} lines`;
-    }
-
-    if (this.settings.displayCharCount && this.settings.displayTotalLines) {
-      totalsDisplay = ` (${textDisplay} / ${lineDisplay})`;
-    } else if (this.settings.displayCharCount) {
-      totalsDisplay = ` (${textDisplay})`;
-    } else if (this.settings.displayTotalLines) {
-      totalsDisplay = ` (${lineDisplay})`;
-    }
-
-    return totalsDisplay;
-  }
-
-  private updateCursor = (): void => {
-    console.log("updating cursor!!!")
-    // let editor = this.getEditor();
-    // if (!this.cursorStatusBar) {
-    //   this.cursorStatusBar = this.addStatusBarItem();
-    // }
-    // if (this.inPreviewMode()) {
-    //   this.cursorStatusBar.setText("");
-    // } else if (editor) {
-    //   let selections: EditorSelection[] = editor.listSelections();
-    //   let lineCount = editor.lineCount();
-    //   if (selections && this.settings.numberCursors) {
-    //     let display: string;
-    //     if (selections.length == 1) {
-    //       display = this.cursorDisplay(selections[0], lineCount);
-    //     } else if (selections.length <= this.settings.numberCursors) {
-    //       let cursorStrings: string[] = [];
-    //       selections.forEach((value) => {
-    //         cursorStrings.push(this.cursorDisplay(value, lineCount, true, true));
-    //       });
-    //       display = cursorStrings.join(this.settings.cursorSeperator);
-    //       if (/ct/.test(this.settings.displayPattern)) {
-    //         display += this.settings.cursorSeperator + lineCount;
-    //       }
-    //     } else {
-    //       display = `${selections.length} cursors`;
-    //     }
-    //     if (editor.somethingSelected()) {
-    //       display += this.totalDisplay(editor, selections);
-    //     }
-    //     this.cursorStatusBar.setText(display);
-    //   }
-    // }
-  };
 }
 
 class CursorLocationSettingTab extends PluginSettingTab {
