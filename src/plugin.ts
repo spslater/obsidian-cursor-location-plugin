@@ -1,5 +1,4 @@
 import {
-  ViewUpdate,
   PluginValue,
   EditorView,
   ViewPlugin,
@@ -26,7 +25,7 @@ class CursorData {
   constructor(range: SelectionRange, doc: Text) {
     this.lct = doc.lines;
 
-    const aLine = doc.lineAt(range.from);
+    const aLine = doc.lineAt(range.anchor);
     this.aLn = aLine.number;
     this.aCh = range.from - aLine.from;
 
@@ -74,7 +73,6 @@ class CursorData {
 class EditorPlugin implements PluginValue {
   private hasPlugin: boolean;
   private view: EditorView;
-  private showUpdates: boolean;
   private plugin: CursorLocation;
 
   constructor(view: EditorView) {
@@ -82,25 +80,21 @@ class EditorPlugin implements PluginValue {
     this.hasPlugin = false;
   }
 
-  update(update: ViewUpdate): void {
-    if (!this.hasPlugin) return;
-    const tr = update.transactions[0];
-    if (!tr) return;
+  update(): void {
+    if (!this.hasPlugin || !this.plugin.showUpdates) return;
 
+    const state = this.view.state;
     let totalSelect: number = 0;
     let totalLine: number = 0;
     let selections: CursorData[] = [];
-    this.view.state.selection.ranges.forEach(range => {
-      const cur = new CursorData(range, this.view.state.doc)
+    state.selection.ranges.forEach(range => {
+      const cur = new CursorData(range, state.doc)
       totalSelect += cur.tot;
       totalLine += cur.tln;
       selections.push(cur);
     });
 
     const settings = this.plugin.settings;
-    const status = this.plugin.cursorStatusBar;
-    status.setText("");
-
     if (selections && settings.numberCursors) {
       let display: string;
       if (selections.length == 1) {
@@ -112,7 +106,7 @@ class EditorPlugin implements PluginValue {
         });
         display = cursorStrings.join(settings.cursorSeperator);
         if (/ct/.test(settings.displayPattern)) {
-          display += settings.cursorSeperator + this.view.state.doc.lines;
+          display += settings.cursorSeperator + state.doc.lines;
         }
       } else {
         display = `${selections.length} cursors`;
@@ -120,13 +114,14 @@ class EditorPlugin implements PluginValue {
       if (totalSelect != 0) {
         display += this.totalDisplay(totalSelect, totalLine);
       }
-      status.setText(display);
+      this.plugin.cursorStatusBar.setText(display);
     }
   }
 
   addPlugin(plugin: CursorLocation) {
     this.plugin = plugin;
     this.hasPlugin = true;
+    this.update();
   }
 
   destroy() {}

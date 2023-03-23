@@ -15,8 +15,9 @@ import {
 } from "src/plugin"
 
 export default class CursorLocation extends Plugin {
-  public cursorStatusBar: HTMLElement;
-  settings: CursorLocationSettings;
+  public cursorStatusBar: HTMLElement = null;
+  public showUpdates: boolean = true;
+  public settings: CursorLocationSettings;
 
   async onload() {
     console.log("loading Cursor Location plugin");
@@ -24,19 +25,34 @@ export default class CursorLocation extends Plugin {
     this.addSettingTab(new CursorLocationSettingTab(this.app, this));
 
     this.cursorStatusBar = this.addStatusBarItem();
-    this.cursorStatusBar.setText("Cursor Location");
 
     this.registerEditorExtension(editorPlugin);
 
     this.app.workspace.onLayoutReady(() => {
       this.giveEditorPlugin(this.app.workspace.getMostRecentLeaf());
+      this.updateShowStatus();
     });
 
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", async (leaf: WorkspaceLeaf) => {
-        this.giveEditorPlugin(leaf); 
+        this.giveEditorPlugin(leaf);
+        this.updateShowStatus();
       })
     );
+
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => {
+        this.updateShowStatus();
+      })
+    )
+  }
+
+  private updateShowStatus() {
+    const mode: string = this.app.workspace.getLeaf().getViewState().state?.mode;
+    this.showUpdates = mode == "source";
+    if (!this.showUpdates) {
+      this.cursorStatusBar.setText("");
+    }
   }
 
   async onunload(): Promise<void> {
@@ -51,6 +67,7 @@ export default class CursorLocation extends Plugin {
       const editorView = editor.cm as EditorView;
       const editorPlug = editorView.plugin(editorPlugin);
       editorPlug.addPlugin(this);
+      editorPlug.update();
     }
   }
 
