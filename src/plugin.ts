@@ -7,32 +7,32 @@ const BEGINPATTERN = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
 const ENDPATTERN = /(.*(ln|ch).*?(ln|ch)).*?ct.*$/i;
 
 class CursorData {
-  aLn: number;
-  aCh: number;
-  hLn: number;
-  hCh: number;
-  lct: number;
-  tot: number;
-  tln: number;
+  anchorLine: number;
+  anchorChar: number;
+  headLine: number;
+  headChar: number;
+  docLineCount: number;
+  highlightedChars: number;
+  highlightedLines: number;
 
   constructor(range: SelectionRange, doc: Text) {
-    this.lct = doc.lines;
+    this.docLineCount = doc.lines;
 
     const aLine = doc.lineAt(range.anchor);
-    this.aLn = aLine.number;
-    this.aCh = range.from - aLine.from;
+    this.anchorLine = aLine.number;
+    this.anchorChar = range.from - aLine.from;
 
     const hLine = doc.lineAt(range.head);
-    this.hLn = hLine.number;
-    this.hCh = range.head - hLine.from;
+    this.headLine = hLine.number;
+    this.headChar = range.head - hLine.from;
 
-    this.tot = range.to - range.from;
-    this.tln = Math.abs(this.aLn - this.hLn) + 1;
+    this.highlightedChars = range.to - range.from;
+    this.highlightedLines = Math.abs(this.anchorLine - this.headLine) + 1;
   }
 
   private partialString(value: string, skipTotal: boolean = false): string {
     if (!skipTotal || MIDDLEPATTERN.test(value)) {
-      value = value.replace("ct", this.lct.toString());
+      value = value.replace("ct", this.docLineCount.toString());
     } else if (BEGINPATTERN.test(value)) {
       value = value.replace(BEGINPATTERN, "$1");
     } else if (ENDPATTERN.test(value)) {
@@ -43,14 +43,14 @@ class CursorData {
 
   public anchorString(value: string, skipTotal: boolean = false): string {
     return this.partialString(value, skipTotal)
-      .replace("ch", this.aCh.toString())
-      .replace("ln", this.aLn.toString());
+      .replace("ch", this.anchorChar.toString())
+      .replace("ln", this.anchorLine.toString());
   }
 
   public headString(value: string, skipTotal: boolean = false): string {
     return this.partialString(value, skipTotal)
-      .replace("ch", this.hCh.toString())
-      .replace("ln", this.hLn.toString());
+      .replace("ch", this.headChar.toString())
+      .replace("ln", this.headLine.toString());
   }
 }
 
@@ -73,8 +73,8 @@ class EditorPlugin implements PluginValue {
     let selections: CursorData[] = [];
     state.selection.ranges.forEach((range) => {
       const cur = new CursorData(range, state.doc);
-      totalSelect += cur.tot;
-      totalLine += cur.tln;
+      totalSelect += cur.highlightedChars;
+      totalLine += cur.highlightedLines;
       selections.push(cur);
     });
 
@@ -121,7 +121,7 @@ class EditorPlugin implements PluginValue {
       value = selection.anchorString(settings.displayPattern, skipTotal);
     } else if (settings.selectionMode == "end") {
       value = selection.headString(settings.displayPattern, skipTotal);
-    } else if (selection.tot == 0) {
+    } else if (selection.highlightedChars == 0) {
       value = selection.headString(settings.displayPattern, skipTotal);
     } else {
       value =
@@ -130,7 +130,7 @@ class EditorPlugin implements PluginValue {
         selection.headString(settings.displayPattern, skipTotal);
     }
     if (displayLines && settings.displayCursorLines) {
-      let numberLines = Math.abs(selection.aLn - selection.hLn) + 1;
+      let numberLines = Math.abs(selection.anchorLine - selection.headLine) + 1;
       let cursorLinePattern = settings.cursorLinePattern;
       value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
     }
