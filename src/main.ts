@@ -1,18 +1,11 @@
-import {
-  Plugin,
-  WorkspaceLeaf,
-} from "obsidian";
-import {
-  EditorView,
-} from "@codemirror/view";
+import { Plugin, WorkspaceLeaf } from "obsidian";
+import { EditorView } from "@codemirror/view";
 import {
   DEFAULT_SETTINGS,
   CursorLocationSettings,
-  CursorLocationSettingTab
-} from "src/settings"
-import {
-  editorPlugin
-} from "src/plugin"
+  CursorLocationSettingTab,
+} from "src/settings";
+import { editorPlugin } from "src/plugin";
 
 export default class CursorLocation extends Plugin {
   public cursorStatusBar: HTMLElement = null;
@@ -34,21 +27,25 @@ export default class CursorLocation extends Plugin {
     });
 
     this.registerEvent(
-      this.app.workspace.on("active-leaf-change", async (leaf: WorkspaceLeaf) => {
-        this.giveEditorPlugin(leaf);
-        this.updateShowStatus();
-      })
+      this.app.workspace.on(
+        "active-leaf-change",
+        async (leaf: WorkspaceLeaf) => {
+          this.giveEditorPlugin(leaf);
+          this.updateShowStatus();
+        }
+      )
     );
 
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
         this.updateShowStatus();
       })
-    )
+    );
   }
 
   private updateShowStatus() {
-    const mode: string = this.app.workspace.getLeaf().getViewState().state?.mode;
+    const mode: string = this.app.workspace.getLeaf().getViewState()
+      .state?.mode;
     this.showUpdates = mode == "source";
     if (!this.showUpdates) {
       this.cursorStatusBar.setText("");

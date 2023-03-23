@@ -1,13 +1,6 @@
-import {
-  PluginValue,
-  EditorView,
-  ViewPlugin,
-} from "@codemirror/view";
-import {
-  Text,
-  SelectionRange,
-} from "@codemirror/state";
-import type CursorLocation from "src/main"
+import { PluginValue, EditorView, ViewPlugin } from "@codemirror/view";
+import { Text, SelectionRange } from "@codemirror/state";
+import type CursorLocation from "src/main";
 
 const MIDDLEPATTERN = /^.*(ln|ch).*?ct.*?(ln|ch).*/i;
 const BEGINPATTERN = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
@@ -33,14 +26,11 @@ class CursorData {
     this.hLn = hLine.number;
     this.hCh = range.head - hLine.from;
 
-    this.tot = range.to-range.from;
+    this.tot = range.to - range.from;
     this.tln = Math.abs(this.aLn - this.hLn) + 1;
   }
 
-  private partialString(
-    value: string,
-    skipTotal: boolean = false
-  ): string {
+  private partialString(value: string, skipTotal: boolean = false): string {
     if (!skipTotal || MIDDLEPATTERN.test(value)) {
       value = value.replace("ct", this.lct.toString());
     } else if (BEGINPATTERN.test(value)) {
@@ -51,19 +41,13 @@ class CursorData {
     return value;
   }
 
-  public anchorString(
-    value: string,
-    skipTotal: boolean = false
-  ): string {
+  public anchorString(value: string, skipTotal: boolean = false): string {
     return this.partialString(value, skipTotal)
       .replace("ch", this.aCh.toString())
       .replace("ln", this.aLn.toString());
   }
 
-  public headString(
-    value: string,
-    skipTotal: boolean = false
-  ): string {
+  public headString(value: string, skipTotal: boolean = false): string {
     return this.partialString(value, skipTotal)
       .replace("ch", this.hCh.toString())
       .replace("ln", this.hLn.toString());
@@ -87,8 +71,8 @@ class EditorPlugin implements PluginValue {
     let totalSelect: number = 0;
     let totalLine: number = 0;
     let selections: CursorData[] = [];
-    state.selection.ranges.forEach(range => {
-      const cur = new CursorData(range, state.doc)
+    state.selection.ranges.forEach((range) => {
+      const cur = new CursorData(range, state.doc);
       totalSelect += cur.tot;
       totalLine += cur.tln;
       selections.push(cur);
@@ -153,10 +137,7 @@ class EditorPlugin implements PluginValue {
     return value;
   }
 
-  private totalDisplay(
-    textCount: number,
-    lineCount: number,
-  ): string {
+  private totalDisplay(textCount: number, lineCount: number): string {
     const settings = this.plugin.settings;
 
     let totalsDisplay: string = "";
