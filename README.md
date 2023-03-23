@@ -3,6 +3,7 @@ This plugin for [Obsidian](https://obsidian.md/) displays the location of the
 cursor (character and line number).
 
 ## Demo
+This demo uses an older version of Obsidian, but the output functions the same.
 ![Demo Gif](demo.gif)
 
 ## Settings
