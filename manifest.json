@@ -6,5 +6,5 @@
   "description": "This displays the location of the cursor (character and line number).",
   "author": "Sean Slater",
   "authorUrl": "https://github.com/spslater/obsidian-cursor-location-plugin",
-  "isDesktopOnly": false
+  "isDesktopOnly": true
 }
