@@ -124,7 +124,6 @@ class EditorPlugin implements PluginValue {
     } else if (selection.highlightedChars == 0) {
       value = selection.headString(settings.displayPattern, skipTotal);
     } else {
-      console.log(selection);
       value =
         selection.anchorString(settings.displayPattern, true) +
         settings.rangeSeperator +
