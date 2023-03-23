@@ -12,16 +12,16 @@ if you want to view the source visit the plugins github repository
 `;
 
 export default {
-  input: 'main.ts',
+  input: 'src/main.ts',
   output: {
-    dir: '.',
+    dir: 'dist/',
     sourcemap: 'inline',
     sourcemapExcludeSources: isProd,
     format: 'cjs',
     exports: 'default',
     banner,
   },
-  external: ['obsidian'],
+  external: ['obsidian', '@codemirror/view', '@codemirror/state'],
   plugins: [
     typescript(),
     nodeResolve({browser: true}),
