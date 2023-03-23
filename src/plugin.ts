@@ -1,5 +1,5 @@
 import { PluginValue, EditorView, ViewPlugin } from "@codemirror/view";
-import { Text, SelectionRange } from "@codemirror/state";
+import { Text, SelectionRange, Line } from "@codemirror/state";
 import type CursorLocation from "src/main";
 
 const MIDDLEPATTERN = /^.*(ln|ch).*?ct.*?(ln|ch).*/i;
@@ -7,11 +7,11 @@ const BEGINPATTERN = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
 const ENDPATTERN = /(.*(ln|ch).*?(ln|ch)).*?ct.*$/i;
 
 class CursorData {
+  docLineCount: number;
   anchorLine: number;
   anchorChar: number;
   headLine: number;
   headChar: number;
-  docLineCount: number;
   highlightedChars: number;
   highlightedLines: number;
 
@@ -20,7 +20,7 @@ class CursorData {
 
     const aLine = doc.lineAt(range.anchor);
     this.anchorLine = aLine.number;
-    this.anchorChar = range.from - aLine.from;
+    this.anchorChar = range.anchor - aLine.from;
 
     const hLine = doc.lineAt(range.head);
     this.headLine = hLine.number;
@@ -124,6 +124,7 @@ class EditorPlugin implements PluginValue {
     } else if (selection.highlightedChars == 0) {
       value = selection.headString(settings.displayPattern, skipTotal);
     } else {
+      console.log(selection);
       value =
         selection.anchorString(settings.displayPattern, true) +
         settings.rangeSeperator +
