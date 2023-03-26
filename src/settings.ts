@@ -12,6 +12,7 @@ export interface CursorLocationSettings {
   displayTotalLines: boolean;
   displayCursorLines: boolean;
   cursorLinePattern: string;
+  statusBarPadding: boolean;
 }
 
 export const DEFAULT_SETTINGS: CursorLocationSettings = {
@@ -24,6 +25,7 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   displayTotalLines: true,
   displayCursorLines: false,
   cursorLinePattern: "[lc]",
+  statusBarPadding: false,
 };
 
 export class CursorLocationSettingTab extends PluginSettingTab {
@@ -325,6 +327,36 @@ export class CursorLocationSettingTab extends PluginSettingTab {
         })
       );
 
+    let statusBarPaddingEl = containerEl.createDiv();
+    statusBarPaddingEl.createEl("h3", { text: "Pad Status Bar" });
+    let statusBarPadding = new Setting(statusBarPaddingEl)
+      .setName("Add padding to lessen the amount the status bar shifts")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.statusBarPadding != null
+              ? this.plugin.settings.statusBarPadding
+              : DEFAULT_SETTINGS.statusBarPadding
+          )
+          .onChange(async (value) => {
+            if (this.plugin.settings.statusBarPadding != value) {
+              console.log(`changing statusBarPadding: ${value}`);
+            }
+            this.plugin.settings.statusBarPadding = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(statusBarPaddingEl)
+      .setName(
+        `Reset to default value of '${DEFAULT_SETTINGS.statusBarPadding}'`
+      )
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(statusBarPadding, "statusBarPadding");
+          await this.plugin.saveSettings();
+        })
+      );
+
     containerEl.createDiv().createEl("h2", { text: "Reset All Settings" });
     const cursorLocationSettings = [
       { elem: numberCursors, setting: "numberCursors" },
@@ -336,6 +368,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       { elem: rangeSeperator, setting: "rangeSeperator" },
       { elem: displayCursorLineCount, setting: "displayCursorLines" },
       { elem: cursorLinePattern, setting: "cursorLinePattern" },
+      // { elem: cursorLinePattern, setting: "cursorLinePattern" },
     ];
 
     let resetAllEl = containerEl.createDiv();
