@@ -109,7 +109,6 @@ class EditorPlugin implements PluginValue {
     const pad = parseInt(statusBar.getCssPropertyValue("padding-right").replace("px", ""));
 
     const width = Math.floor(metrics.width + pad + pad);
-    console.log(width, metrics.width, display);
     return width;
   }
 
@@ -152,13 +151,16 @@ class EditorPlugin implements PluginValue {
       }
 
       if (settings.statusBarPadding) {
-        const ogWidth = this.calculateWidth(display);
-
-        let width: number = ogWidth;
-        let padWidth: number = Math.ceil(ogWidth/9.0)*9;
-        if (width == padWidth) padWidth += 3;
-        console.log(padWidth, width);
-        this.plugin.cursorStatusBar.setAttribute("style", `justify-content:right;width:${padWidth}px;`);
+        const step = settings.paddingStep;
+        const width = this.calculateWidth(display);
+        let padWidth: number = Math.ceil(width/step)*step;
+        if (width == padWidth) padWidth += Math.ceil(step/3);
+        this.plugin.cursorStatusBar.setAttribute(
+          "style",
+          `justify-content:right;width:${padWidth}px;`
+        );
+      } else {
+        this.plugin.cursorStatusBar.removeAttribute("style");
       }
       this.plugin.cursorStatusBar.setText(display);
     }

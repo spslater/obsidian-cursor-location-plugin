@@ -13,6 +13,7 @@ export interface CursorLocationSettings {
   displayCursorLines: boolean;
   cursorLinePattern: string;
   statusBarPadding: boolean;
+  paddingStep: number;
 }
 
 export const DEFAULT_SETTINGS: CursorLocationSettings = {
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   displayCursorLines: false,
   cursorLinePattern: "[lc]",
   statusBarPadding: false,
+  paddingStep: 9,
 };
 
 export class CursorLocationSettingTab extends PluginSettingTab {
@@ -40,7 +42,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     const value = DEFAULT_SETTINGS[setting];
     console.log(`resetting ${setting}: ${value}`);
     let component = elem.components[0] as ValueComponent<any>;
-    component.setValue(value);
+    component.setValue(value?.toString());
     this.plugin.settings[setting] = value;
   }
 
@@ -64,7 +66,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
             let parsedValue = parseInt(value);
             if (!isNaN(parsedValue)) {
               console.log(`updating numberCursors: ${parsedValue}`);
-              warningSection.setText("");
+              cursorWarningSection.setText("");
               this.plugin.settings.numberCursors = parsedValue;
               await this.plugin.saveSettings();
             } else {
@@ -72,13 +74,13 @@ export class CursorLocationSettingTab extends PluginSettingTab {
                 "unable to update numberCursors, ",
                 `unable to parse new value into integer: ${value}`
               );
-              warningSection.setText(
+              cursorWarningSection.setText(
                 `"${value}" is not a number, unable to save.`
               );
             }
           })
       );
-    let warningSection = cursorEl.createEl("p", {
+    let cursorWarningSection = cursorEl.createEl("p", {
       text: "",
       attr: { style: "color:red" },
     });
@@ -87,7 +89,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
           this.resetComponent(numberCursors, "numberCursors");
-          warningSection.setText("");
+          cursorWarningSection.setText("");
           await this.plugin.saveSettings();
         })
       );
@@ -357,6 +359,47 @@ export class CursorLocationSettingTab extends PluginSettingTab {
         })
       );
 
+    let paddingStepEl = containerEl.createDiv();
+    paddingStepEl.createEl("h3", { text: "# of Cursors" });
+    let paddingStep = new Setting(paddingStepEl)
+      .setName(
+        'Width the status bar rounds to to prevent rapid changing.'
+      )
+      .addText((text) =>
+        text
+          .setValue(this.plugin.settings?.paddingStep?.toString())
+          .onChange(async (value) => {
+            let parsedValue = parseInt(value);
+            if (!isNaN(parsedValue)) {
+              console.log(`updating paddingStep: ${parsedValue}`);
+              paddingStepWarningSection.setText("");
+              this.plugin.settings.paddingStep = parsedValue;
+              await this.plugin.saveSettings();
+            } else {
+              console.log(
+                "unable to update paddingStep, ",
+                `unable to parse new value into integer: ${value}`
+              );
+              paddingStepWarningSection.setText(
+                `"${value}" is not a number, unable to save.`
+              );
+            }
+          })
+      );
+    let paddingStepWarningSection = paddingStepEl.createEl("p", {
+      text: "",
+      attr: { style: "color:red" },
+    });
+    new Setting(paddingStepEl)
+      .setName(`Reset to default value of '${DEFAULT_SETTINGS.paddingStep}'`)
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(paddingStep, "paddingStep");
+          paddingStepWarningSection.setText("");
+          await this.plugin.saveSettings();
+        })
+      );
+
     containerEl.createDiv().createEl("h2", { text: "Reset All Settings" });
     const cursorLocationSettings = [
       { elem: numberCursors, setting: "numberCursors" },
@@ -368,7 +411,8 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       { elem: rangeSeperator, setting: "rangeSeperator" },
       { elem: displayCursorLineCount, setting: "displayCursorLines" },
       { elem: cursorLinePattern, setting: "cursorLinePattern" },
-      // { elem: cursorLinePattern, setting: "cursorLinePattern" },
+      { elem: statusBarPadding, setting: "statusBarPadding" },
+      { elem: paddingStep, setting: "paddingStep" },
     ];
 
     let resetAllEl = containerEl.createDiv();
@@ -380,7 +424,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
           cursorLocationSettings.forEach((setting) => {
             this.resetComponent(setting.elem, setting.setting);
           });
-          warningSection.setText("");
+          cursorWarningSection.setText("");
           await this.plugin.saveSettings();
         })
       );

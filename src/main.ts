@@ -49,6 +49,7 @@ export default class CursorLocation extends Plugin {
     this.showUpdates = mode == "source";
     if (!this.showUpdates) {
       this.cursorStatusBar.setText("");
+      this.cursorStatusBar.removeAttribute("style");
     }
   }
 
