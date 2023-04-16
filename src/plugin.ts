@@ -6,8 +6,22 @@ const MIDDLEPATTERN = /^.*(ln|ch).*?ct.*?(ln|ch).*/i;
 const BEGINPATTERN = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
 const ENDPATTERN = /(.*(ln|ch).*?(ln|ch)).*?ct.*$/i;
 
+const MULTCURSORS = "{} cursors";
+const SELECTTEXTDISPLAY = `{} selected`;
+const SELECTLINEDISPLAY = `{} lines`;
+const SELECTMULT = ` ({} / {})`;
+const SELECTSINGLE = ` ({})`;
+
+function format(raw: string, ...args: any[]) {
+  for (let arg of args) {
+    raw = raw.replace("{}", arg.toString());
+  }
+  return raw;
+}
+
 class CursorData {
   docLineCount: number;
+  docCharCount: number;
   anchorLine: number;
   anchorChar: number;
   headLine: number;
@@ -17,6 +31,7 @@ class CursorData {
 
   constructor(range: SelectionRange, doc: Text) {
     this.docLineCount = doc.lines;
+    this.docCharCount = doc.length;
 
     const aLine = doc.lineAt(range.anchor);
     this.anchorLine = aLine.number;
@@ -30,7 +45,10 @@ class CursorData {
     this.highlightedLines = Math.abs(this.anchorLine - this.headLine) + 1;
   }
 
-  private partialString(value: string, skipTotal: boolean = false): string {
+  private partialString(
+    value: string,
+    skipTotal: boolean = false,
+  ): string {
     if (!skipTotal || MIDDLEPATTERN.test(value)) {
       value = value.replace("ct", this.docLineCount.toString());
     } else if (BEGINPATTERN.test(value)) {
@@ -41,13 +59,19 @@ class CursorData {
     return value;
   }
 
-  public anchorString(value: string, skipTotal: boolean = false): string {
+  public anchorString(
+    value: string,
+    skipTotal: boolean = false,
+  ): string {
     return this.partialString(value, skipTotal)
       .replace("ch", this.anchorChar.toString())
       .replace("ln", this.anchorLine.toString());
   }
 
-  public headString(value: string, skipTotal: boolean = false): string {
+  public headString(
+    value: string,
+    skipTotal: boolean = false,
+  ): string {
     return this.partialString(value, skipTotal)
       .replace("ch", this.headChar.toString())
       .replace("ln", this.headLine.toString());
@@ -58,16 +82,43 @@ class EditorPlugin implements PluginValue {
   private hasPlugin: boolean;
   private view: EditorView;
   private plugin: CursorLocation;
+  private canvasContext: any; // idk what type this should actually be
 
   constructor(view: EditorView) {
     this.view = view;
     this.hasPlugin = false;
   }
 
+  private calculateWidth(display: string, updateFont: boolean = true): number {
+    const statusBar = this.plugin.cursorStatusBar;
+    if (!this.canvasContext) {
+      const canvas: HTMLElement = statusBar.createEl("canvas");
+    // @ts-ignore
+      this.canvasContext = canvas.getContext("2d");
+    }
+
+    if (updateFont) {
+      const fontWeight = statusBar.getCssPropertyValue("font-weight") || "normal";
+      const fontSize = statusBar.getCssPropertyValue("font-size") || "12pt";
+      const fontFamily = statusBar.getCssPropertyValue("font-family") || "ui-sans-serif";
+      const font = `${fontWeight} ${fontSize} ${fontFamily}`;
+      this.canvasContext.font = font;
+    }
+
+    const metrics = this.canvasContext.measureText(display);
+    const pad = parseInt(statusBar.getCssPropertyValue("padding-right").replace("px", ""));
+
+    const width = Math.floor(metrics.width + pad + pad);
+    return width;
+  }
+
   update(): void {
     if (!this.hasPlugin || !this.plugin.showUpdates) return;
 
     const state = this.view.state;
+    const docChars = state.doc.length;
+    const docLines = state.doc.lines;
+
     let totalSelect: number = 0;
     let totalLine: number = 0;
     let selections: CursorData[] = [];
@@ -90,13 +141,26 @@ class EditorPlugin implements PluginValue {
         });
         display = cursorStrings.join(settings.cursorSeperator);
         if (/ct/.test(settings.displayPattern)) {
-          display += settings.cursorSeperator + state.doc.lines;
+          display += settings.cursorSeperator + docLines;
         }
       } else {
-        display = `${selections.length} cursors`;
+        display = format(MULTCURSORS, selections.length);
       }
       if (totalSelect != 0) {
         display += this.totalDisplay(totalSelect, totalLine);
+      }
+
+      if (settings.statusBarPadding) {
+        const step = settings.paddingStep;
+        const width = this.calculateWidth(display);
+        let padWidth: number = Math.ceil(width/step)*step;
+        if (width == padWidth) padWidth += Math.ceil(step/3);
+        this.plugin.cursorStatusBar.setAttribute(
+          "style",
+          `justify-content:right;width:${padWidth}px;`
+        );
+      } else {
+        this.plugin.cursorStatusBar.removeAttribute("style");
       }
       this.plugin.cursorStatusBar.setText(display);
     }
@@ -113,7 +177,7 @@ class EditorPlugin implements PluginValue {
   private cursorDisplay(
     selection: CursorData,
     displayLines: boolean = false,
-    skipTotal: boolean = false
+    skipTotal: boolean = false,
   ): string {
     let value: string;
     const settings = this.plugin.settings;
@@ -137,25 +201,28 @@ class EditorPlugin implements PluginValue {
     return value;
   }
 
-  private totalDisplay(textCount: number, lineCount: number): string {
+  private totalDisplay(
+    textCount: number,
+    lineCount: number,
+  ): string {
     const settings = this.plugin.settings;
 
     let totalsDisplay: string = "";
     let textDisplay: string;
     let lineDisplay: string;
     if (settings.displayCharCount) {
-      textDisplay = `${textCount} selected`;
+      textDisplay = format(SELECTTEXTDISPLAY, textCount);
     }
     if (settings.displayTotalLines) {
-      lineDisplay = `${lineCount} lines`;
+      lineDisplay = format(SELECTLINEDISPLAY, lineCount);
     }
 
     if (settings.displayCharCount && settings.displayTotalLines) {
-      totalsDisplay = ` (${textDisplay} / ${lineDisplay})`;
+      totalsDisplay = format(SELECTMULT, textDisplay, lineDisplay);
     } else if (settings.displayCharCount) {
-      totalsDisplay = ` (${textDisplay})`;
+      totalsDisplay = format(SELECTSINGLE, textDisplay);
     } else if (settings.displayTotalLines) {
-      totalsDisplay = ` (${lineDisplay})`;
+      totalsDisplay = format(SELECTSINGLE, lineDisplay);
     }
 
     return totalsDisplay;
