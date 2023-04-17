@@ -14,6 +14,7 @@ export interface CursorLocationSettings {
   cursorLinePattern: string;
   statusBarPadding: boolean;
   paddingStep: number;
+  wordyDisplay: boolean;
 }
 
 export const DEFAULT_SETTINGS: CursorLocationSettings = {
@@ -28,6 +29,7 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   cursorLinePattern: "[lc]",
   statusBarPadding: false,
   paddingStep: 9,
+  wordyDisplay: false,
 };
 
 export class CursorLocationSettingTab extends PluginSettingTab {
