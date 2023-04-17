@@ -3,11 +3,12 @@ import * as c from "src/constants";
 
 export function generateSelections(
   doc: Text,
-  ranges: readonly SelectionRange[]
+  ranges: readonly SelectionRange[],
+  frontmatter: number = null,
 ): Selections {
   let selections: Selections = new Selections();
   ranges.forEach((range) => {
-    selections.addCursor(new CursorData(range, doc));
+    selections.addCursor(new CursorData(range, doc, frontmatter));
   });
   return selections;
 }
@@ -39,8 +40,9 @@ export class CursorData {
   headChar: number;
   highlightedChars: number;
   highlightedLines: number;
+  frontmatter: number;
 
-  constructor(range: SelectionRange, doc: Text) {
+  constructor(range: SelectionRange, doc: Text, frontmatter: number) {
     this.docLineCount = doc.lines;
     this.docCharCount = doc.length;
 
@@ -54,6 +56,8 @@ export class CursorData {
 
     this.highlightedChars = range.to - range.from;
     this.highlightedLines = Math.abs(this.anchorLine - this.headLine) + 1;
+
+    this.frontmatter = frontmatter;
   }
 
   private partialString(
@@ -86,5 +90,24 @@ export class CursorData {
     return this.partialString(value, skipTotal)
       .replace("ch", this.headChar.toString())
       .replace("ln", this.headLine.toString());
+  }
+
+  private percent(curLine: number) {
+    let total = (this.docLineCount-1);
+    if (this.frontmatter === null) {
+      return Math.round(((curLine/total)+Number.EPSILON)*100);
+    }
+    const line = (curLine-this.frontmatter-1);
+    total -= this.frontmatter;
+    console.log(line, total, this.frontmatter);
+    return Math.round(((line/total)+Number.EPSILON)*100);
+  }
+
+  public headPercent(): number {
+    return this.percent(this.headLine);
+  }
+
+  public anchorPercent(): number {
+    return this.percent(this.anchorLine);
   }
 }

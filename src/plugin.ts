@@ -1,8 +1,8 @@
 import { PluginValue, EditorView, ViewPlugin } from "@codemirror/view";
-// import { Text } from "@codemirror/state";
+import { Text } from "@codemirror/state";
 
 import type CursorLocation from "src/main";
-// import type { CursorLocationSettings } from "src/settings";
+import type { CursorLocationSettings } from "src/settings";
 import { generateSelections, Selections, CursorData } from "src/selections";
 import * as c from "src/constants";
 
@@ -16,6 +16,12 @@ function format(raw: string, ...args: any[]) {
     raw = raw.replace("{}", arg.toString());
   }
   return raw;
+}
+
+function frontmatter(doc: Text, settings: CursorLocationSettings): number {
+  if (!settings.wordyDisplay) return null;
+  const result: RegExpMatchArray = doc.toString().match(c.FRONTMATTER);
+  return result ? doc.lineAt(result[0].length).number : null;
 }
 
 class EditorPlugin implements PluginValue {
@@ -60,58 +66,55 @@ class EditorPlugin implements PluginValue {
     const docLines = state.doc.lines;
     let display: string;
 
-    let selections: Selections = generateSelections(state.doc, state.selection.ranges);
+    const fmLine = frontmatter(state.doc, settings);
+    let selections: Selections = generateSelections(state.doc, state.selection.ranges, fmLine);
     let cursors = selections.cursors;
 
     if (settings.wordyDisplay) {
-      const result = state.doc.toString().match(c.FRONTMATTER);
-      // console.log(result);
-      if (result) {
-        const fLine = state.doc.lineAt(result[0].length).number - 1;
-        if (cursors.length == 1) {
-          const line = cursors[0].headLine - 1;
-          const full = Math.round(((line/(docLines-1))+Number.EPSILON)*100);
-          const front = Math.round((((line-fLine)/(docLines-fLine-1))+Number.EPSILON)*100);
-          let fullWord = "";
-          let frontWord = "";
-          if (0 > front) {
-            frontWord = "frontmatter";
-          } else if (front == 0) {
-            frontWord = "top"
-          } else if (front == 100) {
-            frontWord = "bottom"
-          } else {
-            frontWord = "body"
-          }
-          if (full == 0) {
-            fullWord = "top"
-          } else if (full == 100) {
-            fullWord = "bottom"
-          } else {
-            fullWord = "body"
-          }
-          display = `${full}% (${front}%) | ${fullWord} (${frontWord})`;
-        } else if (cursors.length <= settings.numberCursors) {
-          let cursorStrings: string[] = [];
-          cursors.forEach((cursor) => {
-            const line = cursor.headLine - 1;
-            const full = Math.round(((line/(docLines-1))+Number.EPSILON)*100);
-            const front = Math.round((((line-fLine)/(docLines-fLine-1))+Number.EPSILON)*100);
-            cursorStrings.push(`${full}% (${front}%)`)
-          });
-          display = cursorStrings.join(settings.cursorSeperator);
+      if (cursors.length == 1) {
+        const cursor = cursors[0];
+        const anchPct = cursor.anchorPercent();
+        const headPct = cursor.headPercent();
+        let anchWord: string;
+        let headWord: string;
+        if (fmLine >= cursor.anchorLine) {
+          anchWord = "frontmatter";
+        } else if (headPct == 0) {
+          anchWord = "top"
+        } else if (anchPct == 100) {
+          anchWord = "bottom"
         } else {
-          display = format(c.MULTCURSORS, cursors.length);
+          anchWord = "body"
         }
+        if (fmLine >= cursor.headLine) {
+          headWord = "frontmatter";
+        } else if (headPct == 0) {
+          headWord = "top"
+        } else if (headPct == 100) {
+          headWord = "bottom"
+        } else {
+          headWord = "body"
+        }
+        display = `${anchPct}% (${headPct}%) | ${anchWord} (${headWord})`;
+      } else if (cursors.length <= settings.numberCursors) {
+        let cursorStrings: string[] = [];
+        cursors.forEach((cursor) => {
+          const headPct = cursor.headPercent();
+          const anchPct = cursor.anchorPercent();
+          cursorStrings.push(`${headPct}% (${anchPct}%)`)
+        });
+        display = cursorStrings.join(settings.cursorSeperator);
+      } else {
+        display = format(c.MULTCURSORS, cursors.length);
       }
     } else {
       if (cursors && settings.numberCursors) {
         if (cursors.length == 1) {
-          display = this.cursorDisplay(cursors[0]);
+          display = this.rowColDisplay(cursors[0]);
         } else if (cursors.length <= settings.numberCursors) {
           let cursorStrings: string[] = [];
           cursors.forEach((value) => {
-            cursorStrings.push(this.cursorDisplay(value, true, true));
+            cursorStrings.push(this.rowColDisplay(value, true, true));
           });
           display = cursorStrings.join(settings.cursorSeperator);
           if (/ct/.test(settings.displayPattern)) {
@@ -149,7 +152,7 @@ class EditorPlugin implements PluginValue {
 
   destroy() {}
 
-  private cursorDisplay(
+  private rowColDisplay(
     selection: CursorData,
     displayLines: boolean = false,
     skipTotal: boolean = false,
