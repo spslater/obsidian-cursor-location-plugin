@@ -1,4 +1,6 @@
 import { Text, SelectionRange } from "@codemirror/state";
+import type { CursorLocationSettings } from "src/settings";
+import { format, closest } from "src/helpers";
 import * as c from "src/constants";
 
 export function generateSelections(
@@ -28,6 +30,28 @@ export class Selections {
     this.chars += cursor.highlightedChars;
     this.lines += cursor.highlightedLines;
     this.cursors.push(cursor);
+  }
+
+  public totalDisplay(settings: CursorLocationSettings): string {
+    let totalsDisplay: string = "";
+    let textDisplay: string;
+    let lineDisplay: string;
+    if (settings.displayCharCount) {
+      textDisplay = format(c.SELECTTEXTDISPLAY, this.chars);
+    }
+    if (settings.displayTotalLines) {
+      lineDisplay = format(c.SELECTLINEDISPLAY, this.lines);
+    }
+
+    if (settings.displayCharCount && settings.displayTotalLines) {
+      totalsDisplay = format(c.SELECTMULT, textDisplay, lineDisplay);
+    } else if (settings.displayCharCount) {
+      totalsDisplay = format(c.SELECTSINGLE, textDisplay);
+    } else if (settings.displayTotalLines) {
+      totalsDisplay = format(c.SELECTSINGLE, lineDisplay);
+    }
+
+    return totalsDisplay;
   }
 }
 
@@ -99,7 +123,6 @@ export class CursorData {
     }
     const line = (curLine-this.frontmatter-1);
     total -= this.frontmatter;
-    console.log(line, total, this.frontmatter);
     return Math.round(((line/total)+Number.EPSILON)*100);
   }
 
@@ -109,5 +132,46 @@ export class CursorData {
 
   public anchorPercent(): number {
     return this.percent(this.anchorLine);
+  }
+
+  private wordyString(
+    curLine: number,
+    fuzzyAmount: string,
+    frontmatterString: string,
+  ): string {
+    if (this.frontmatter != null && this.frontmatter >= curLine) {
+      return frontmatterString;
+    }
+    const pct = this.percent(curLine);
+    switch (fuzzyAmount) {
+      case "verywordy":
+        return c.LOWRANGEWORDS.get(closest(pct, 20));
+      case "littewordy":
+        return c.HIGHRANGEWORDS.get(closest(pct, 33));
+      case "strictpercent":
+        if (pct == 0 || pct == 100) {
+          return c.HARDPERCENTWORDS.get(pct);
+        }
+        return `${pct}%`
+      case "lowfuzzypercent":
+        if (pct <= 10) return "top"
+        if (pct >= 90) return "bottom"
+        return `${pct}%`
+      case "highfuzzypercent":
+        if (pct <= 20) return "top"
+        if (pct >= 80) return "bottom"
+        return `${pct}%`
+      case "onlypercent":
+        return `${pct}%`
+    }
+    return ""
+  }
+
+  public headWordy(fuzzyAmount: string, frontmatterString: string): string {
+    return this.wordyString(this.headLine, fuzzyAmount, frontmatterString)
+  }
+
+  public anchorWordy(fuzzyAmount: string, frontmatterString: string): string {
+    return this.wordyString(this.anchorLine, fuzzyAmount, frontmatterString)
   }
 }

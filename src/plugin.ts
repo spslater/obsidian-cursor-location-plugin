@@ -4,22 +4,12 @@ import { Text } from "@codemirror/state";
 import type CursorLocation from "src/main";
 import type { CursorLocationSettings } from "src/settings";
 import { generateSelections, Selections, CursorData } from "src/selections";
+import { format, closest } from "src/helpers";
 import * as c from "src/constants";
 
 
-function closest(val: number, to: number) {
-  return Math.floor(val/to)*to;
-}
-
-function format(raw: string, ...args: any[]) {
-  for (let arg of args) {
-    raw = raw.replace("{}", arg.toString());
-  }
-  return raw;
-}
-
 function frontmatter(doc: Text, settings: CursorLocationSettings): number {
-  if (!settings.wordyDisplay) return null;
+  if (!settings.wordyDisplay || !settings.includeFrontmatter) return null;
   const result: RegExpMatchArray = doc.toString().match(c.FRONTMATTER);
   return result ? doc.lineAt(result[0].length).number : null;
 }
@@ -72,36 +62,11 @@ class EditorPlugin implements PluginValue {
 
     if (settings.wordyDisplay) {
       if (cursors.length == 1) {
-        const cursor = cursors[0];
-        const anchPct = cursor.anchorPercent();
-        const headPct = cursor.headPercent();
-        let anchWord: string;
-        let headWord: string;
-        if (fmLine >= cursor.anchorLine) {
-          anchWord = "frontmatter";
-        } else if (headPct == 0) {
-          anchWord = "top"
-        } else if (anchPct == 100) {
-          anchWord = "bottom"
-        } else {
-          anchWord = "body"
-        }
-        if (fmLine >= cursor.headLine) {
-          headWord = "frontmatter";
-        } else if (headPct == 0) {
-          headWord = "top"
-        } else if (headPct == 100) {
-          headWord = "bottom"
-        } else {
-          headWord = "body"
-        }
-        display = `${anchPct}% (${headPct}%) | ${anchWord} (${headWord})`;
+        display = this.wordyDisplay(cursors[0]);
       } else if (cursors.length <= settings.numberCursors) {
         let cursorStrings: string[] = [];
         cursors.forEach((cursor) => {
-          const headPct = cursor.headPercent();
-          const anchPct = cursor.anchorPercent();
-          cursorStrings.push(`${headPct}% (${anchPct}%)`)
+          cursorStrings.push(this.wordyDisplay(cursor))
         });
         display = cursorStrings.join(settings.cursorSeperator);
       } else {
@@ -124,7 +89,7 @@ class EditorPlugin implements PluginValue {
           display = format(c.MULTCURSORS, cursors.length);
         }
         if (selections.chars != 0) {
-          display += this.totalDisplay(selections.chars, selections.lines);
+          display += selections.totalDisplay(settings);
         }
 
         if (settings.statusBarPadding) {
@@ -179,32 +144,31 @@ class EditorPlugin implements PluginValue {
     return value;
   }
 
-  private totalDisplay(
-    textCount: number,
-    lineCount: number,
-  ): string {
+
+  private wordyDisplay(cursor: CursorData): string {
+    let value: string;
     const settings = this.plugin.settings;
 
-    let totalsDisplay: string = "";
-    let textDisplay: string;
-    let lineDisplay: string;
-    if (settings.displayCharCount) {
-      textDisplay = format(c.SELECTTEXTDISPLAY, textCount);
+    if (settings.selectionMode == "begin") {
+      value = cursor.anchorWordy(settings.fuzzyAmount, settings.frontmatterString);
+    } else if (settings.selectionMode == "end") {
+      value = cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+    } else if (cursor.highlightedChars == 0) {
+      value = cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+    } else {
+      value =
+        cursor.anchorWordy(settings.fuzzyAmount, settings.frontmatterString) +
+        settings.rangeSeperator +
+        cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
     }
-    if (settings.displayTotalLines) {
-      lineDisplay = format(c.SELECTLINEDISPLAY, lineCount);
-    }
-
-    if (settings.displayCharCount && settings.displayTotalLines) {
-      totalsDisplay = format(c.SELECTMULT, textDisplay, lineDisplay);
-    } else if (settings.displayCharCount) {
-      totalsDisplay = format(c.SELECTSINGLE, textDisplay);
-    } else if (settings.displayTotalLines) {
-      totalsDisplay = format(c.SELECTSINGLE, lineDisplay);
-    }
-
-    return totalsDisplay;
+    // if (displayLines && settings.displayCursorLines) {
+    //   let numberLines = Math.abs(cursor.anchorLine - cursor.headLine) + 1;
+    //   let cursorLinePattern = settings.cursorLinePattern;
+    //   value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
+    // }
+    return value;
   }
+
 }
 
 export const editorPlugin = ViewPlugin.fromClass(EditorPlugin);

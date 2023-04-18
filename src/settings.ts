@@ -15,6 +15,9 @@ export interface CursorLocationSettings {
   statusBarPadding: boolean;
   paddingStep: number;
   wordyDisplay: boolean;
+  fuzzyAmount: string;
+  includeFrontmatter: boolean;
+  frontmatterString: string;
 }
 
 export const DEFAULT_SETTINGS: CursorLocationSettings = {
@@ -30,6 +33,9 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   statusBarPadding: false,
   paddingStep: 9,
   wordyDisplay: true,
+  fuzzyAmount: "verywordy",
+  includeFrontmatter: false,
+  frontmatterString: "frontmatter",
 };
 
 export class CursorLocationSettingTab extends PluginSettingTab {
@@ -402,6 +408,125 @@ export class CursorLocationSettingTab extends PluginSettingTab {
         })
       );
 
+    let wordyDisplayEl = containerEl.createDiv();
+    wordyDisplayEl.createEl("h3", { text: "Display as Percent" });
+    let wordyDisplay = new Setting(wordyDisplayEl)
+      .setName("Display percent thru the document instead of line number")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.wordyDisplay != null
+              ? this.plugin.settings.wordyDisplay
+              : DEFAULT_SETTINGS.wordyDisplay
+          )
+          .onChange(async (value) => {
+            if (this.plugin.settings.wordyDisplay != value) {
+              console.log(`changing wordyDisplay: ${value}`);
+            }
+            this.plugin.settings.wordyDisplay = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(wordyDisplayEl)
+      .setName(
+        `Reset to default value of '${DEFAULT_SETTINGS.wordyDisplay}'`
+      )
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(wordyDisplay, "wordyDisplay");
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let fuzzyAmountEl = containerEl.createDiv();
+    fuzzyAmountEl.createEl("h3", { text: "Selecion Mode" });
+    let fuzzyAmount = new Setting(fuzzyAmountEl)
+      .setName(
+        "When showing percents, include "
+      )
+      .addDropdown((cb) =>
+        cb
+          .addOption("verywordy", "Very Wordy")
+          .addOption("littewordy", "Little Wordy")
+          .addOption("strictpercent", "Strict Percentages")
+          .addOption("lowfuzzypercent", "Low Fuzzy Percentages")
+          .addOption("highfuzzypercent", "High Fuzzy Percentages")
+          .addOption("onlypercent", "Only Percentages")
+          .setValue(
+            this.plugin.settings.fuzzyAmount || DEFAULT_SETTINGS.fuzzyAmount
+          )
+          .onChange(async (value) => {
+            console.log(`changing fuzzyAmount: ${value}`);
+            this.plugin.settings.fuzzyAmount = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(fuzzyAmountEl)
+      .setName("Reset to default value of 'Very Wordy'")
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(fuzzyAmount, "fuzzyAmount");
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let includeFrontmatterEl = containerEl.createDiv();
+    includeFrontmatterEl.createEl("h3", { text: "Display as Percent" });
+    let includeFrontmatter = new Setting(includeFrontmatterEl)
+      .setName("Include the frontmatter as part of the document percentage")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.includeFrontmatter != null
+              ? this.plugin.settings.includeFrontmatter
+              : DEFAULT_SETTINGS.includeFrontmatter
+          )
+          .onChange(async (value) => {
+            if (this.plugin.settings.includeFrontmatter != value) {
+              console.log(`changing includeFrontmatter: ${value}`);
+            }
+            this.plugin.settings.includeFrontmatter = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(includeFrontmatterEl)
+      .setName(
+        `Reset to default value of '${DEFAULT_SETTINGS.includeFrontmatter}'`
+      )
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(includeFrontmatter, "includeFrontmatter");
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let frontmatterStringEl = containerEl.createDiv();
+    frontmatterStringEl.createEl("h3", { text: "Frontmatter Phrase" });
+    let frontmatterString = new Setting(frontmatterStringEl)
+      .setName("What to call the frontmatter when cursor is inside it")
+      .addDropdown((cb) =>
+        cb
+          .addOption("frontmatter", "frontmatter")
+          .addOption("metadata", "metadata")
+          .addOption("preamble", "preamble")
+          .setValue(
+            this.plugin.settings.frontmatterString || DEFAULT_SETTINGS.frontmatterString
+          )
+          .onChange(async (value) => {
+            console.log(`changing frontmatterString: ${value}`);
+            this.plugin.settings.frontmatterString = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(frontmatterStringEl)
+      .setName("Reset to default value of 'frontmatter'")
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(frontmatterString, "frontmatterString");
+          await this.plugin.saveSettings();
+        })
+      );
+
     containerEl.createDiv().createEl("h2", { text: "Reset All Settings" });
     const cursorLocationSettings = [
       { elem: numberCursors, setting: "numberCursors" },
@@ -415,6 +540,10 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       { elem: cursorLinePattern, setting: "cursorLinePattern" },
       { elem: statusBarPadding, setting: "statusBarPadding" },
       { elem: paddingStep, setting: "paddingStep" },
+      { elem: wordyDisplay, setting: "wordyDisplay" },
+      { elem: fuzzyAmount, setting: "fuzzyAmount" },
+      { elem: includeFrontmatter, setting: "includeFrontmatter" },
+      { elem: frontmatterString, setting: "frontmatterString" },
     ];
 
     let resetAllEl = containerEl.createDiv();

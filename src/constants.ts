@@ -30,6 +30,7 @@ export const HIGHRANGEWORDS = new Map([
 [  0, "top"],
 [ 33, "middle"],
 [ 66, "bottom"],
+[ 99, "bottom"],
 [100, "bottom"],
 ]);
 
