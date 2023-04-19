@@ -14,6 +14,10 @@ export interface CursorLocationSettings {
   cursorLinePattern: string;
   statusBarPadding: boolean;
   paddingStep: number;
+  wordyDisplay: boolean;
+  fuzzyAmount: string;
+  includeFrontmatter: boolean;
+  frontmatterString: string;
 }
 
 export const DEFAULT_SETTINGS: CursorLocationSettings = {
@@ -28,6 +32,10 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   cursorLinePattern: "[lc]",
   statusBarPadding: false,
   paddingStep: 9,
+  wordyDisplay: true,
+  fuzzyAmount: "strictpercent",
+  includeFrontmatter: false,
+  frontmatterString: "frontmatter",
 };
 
 export class CursorLocationSettingTab extends PluginSettingTab {
@@ -75,7 +83,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
                 `unable to parse new value into integer: ${value}`
               );
               cursorWarningSection.setText(
-                `"${value}" is not a number, unable to save.`
+                `"${value}" is not a full number, unable to save.`
               );
             }
           })
@@ -360,10 +368,12 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       );
 
     let paddingStepEl = containerEl.createDiv();
-    paddingStepEl.createEl("h3", { text: "# of Cursors" });
+    paddingStepEl.createEl("h3", { text: "Padding Width" });
     let paddingStep = new Setting(paddingStepEl)
       .setName(
-        'Width the status bar rounds to to prevent rapid changing.'
+        "Amount the status bar will round to when padding. \
+        For example, with the default value of '9' the status bar \
+        could be set to a width of 81 if the contents width is 78."
       )
       .addText((text) =>
         text
@@ -381,7 +391,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
                 `unable to parse new value into integer: ${value}`
               );
               paddingStepWarningSection.setText(
-                `"${value}" is not a number, unable to save.`
+                `"${value}" is not a full number, unable to save.`
               );
             }
           })
@@ -400,6 +410,132 @@ export class CursorLocationSettingTab extends PluginSettingTab {
         })
       );
 
+    let wordyDisplayEl = containerEl.createDiv();
+    wordyDisplayEl.createEl("h3", { text: "Display as Percent" });
+    let wordyDisplay = new Setting(wordyDisplayEl)
+      .setName("Display percent thru the document instead of line number")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.wordyDisplay != null
+              ? this.plugin.settings.wordyDisplay
+              : DEFAULT_SETTINGS.wordyDisplay
+          )
+          .onChange(async (value) => {
+            if (this.plugin.settings.wordyDisplay != value) {
+              console.log(`changing wordyDisplay: ${value}`);
+            }
+            this.plugin.settings.wordyDisplay = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(wordyDisplayEl)
+      .setName(
+        `Reset to default value of '${DEFAULT_SETTINGS.wordyDisplay}'`
+      )
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(wordyDisplay, "wordyDisplay");
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let fuzzyAmountEl = containerEl.createDiv();
+    fuzzyAmountEl.createEl("h3", { text: "Percentage Mode" });
+    let fuzzyAmount = new Setting(fuzzyAmountEl)
+      .setName(
+        "How many words versus percent numbers to display. <br /> \
+        * Very Wordy: only uses words, splits the document into 5ths <br /> \
+        * A Little Wordy: only uses words, splits the document into 3rds <br /> \
+        * Strict Percentages: Will say at the top and bottom, and then percentages from 1% to 99% <br /> \
+        * Low Fuzzy Percentages: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document <br /> \
+        * High Fuzzy Percentages: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document <br /> \
+        * Only Percentages: Shows percentages throughout the document, no words are used <br /> \
+        "
+      )
+      .addDropdown((cb) =>
+        cb
+          .addOption("verywordy", "Very Wordy")
+          .addOption("littewordy", "Little Wordy")
+          .addOption("strictpercent", "Strict Percentages")
+          .addOption("lowfuzzypercent", "Low Fuzzy Percentages")
+          .addOption("highfuzzypercent", "High Fuzzy Percentages")
+          .addOption("onlypercent", "Only Percentages")
+          .setValue(
+            this.plugin.settings.fuzzyAmount || DEFAULT_SETTINGS.fuzzyAmount
+          )
+          .onChange(async (value) => {
+            console.log(`changing fuzzyAmount: ${value}`);
+            this.plugin.settings.fuzzyAmount = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(fuzzyAmountEl)
+      .setName("Reset to default value of 'Strict Percentages'")
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(fuzzyAmount, "fuzzyAmount");
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let includeFrontmatterEl = containerEl.createDiv();
+    includeFrontmatterEl.createEl("h3", { text: "Include Frontmatter" });
+    let includeFrontmatter = new Setting(includeFrontmatterEl)
+      .setName("Include the frontmatter as part of the document percentage")
+      .addToggle((cb) =>
+        cb
+          .setValue(
+            this.plugin.settings.includeFrontmatter != null
+              ? this.plugin.settings.includeFrontmatter
+              : DEFAULT_SETTINGS.includeFrontmatter
+          )
+          .onChange(async (value) => {
+            if (this.plugin.settings.includeFrontmatter != value) {
+              console.log(`changing includeFrontmatter: ${value}`);
+            }
+            this.plugin.settings.includeFrontmatter = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(includeFrontmatterEl)
+      .setName(
+        `Reset to default value of '${DEFAULT_SETTINGS.includeFrontmatter}'`
+      )
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(includeFrontmatter, "includeFrontmatter");
+          await this.plugin.saveSettings();
+        })
+      );
+
+    let frontmatterStringEl = containerEl.createDiv();
+    frontmatterStringEl.createEl("h3", { text: "Frontmatter Phrase" });
+    let frontmatterString = new Setting(frontmatterStringEl)
+      .setName("What to call the frontmatter when cursor is inside it")
+      .addDropdown((cb) =>
+        cb
+          .addOption("frontmatter", "frontmatter")
+          .addOption("metadata", "metadata")
+          .addOption("preamble", "preamble")
+          .setValue(
+            this.plugin.settings.frontmatterString || DEFAULT_SETTINGS.frontmatterString
+          )
+          .onChange(async (value) => {
+            console.log(`changing frontmatterString: ${value}`);
+            this.plugin.settings.frontmatterString = value;
+            await this.plugin.saveSettings();
+          })
+      );
+    new Setting(frontmatterStringEl)
+      .setName("Reset to default value of 'frontmatter'")
+      .addButton((cb) =>
+        cb.setButtonText("Reset").onClick(async () => {
+          this.resetComponent(frontmatterString, "frontmatterString");
+          await this.plugin.saveSettings();
+        })
+      );
+
     containerEl.createDiv().createEl("h2", { text: "Reset All Settings" });
     const cursorLocationSettings = [
       { elem: numberCursors, setting: "numberCursors" },
@@ -413,6 +549,10 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       { elem: cursorLinePattern, setting: "cursorLinePattern" },
       { elem: statusBarPadding, setting: "statusBarPadding" },
       { elem: paddingStep, setting: "paddingStep" },
+      { elem: wordyDisplay, setting: "wordyDisplay" },
+      { elem: fuzzyAmount, setting: "fuzzyAmount" },
+      { elem: includeFrontmatter, setting: "includeFrontmatter" },
+      { elem: frontmatterString, setting: "frontmatterString" },
     ];
 
     let resetAllEl = containerEl.createDiv();
