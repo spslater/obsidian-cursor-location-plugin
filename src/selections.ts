@@ -116,22 +116,19 @@ export class CursorData {
       .replace("ln", this.headLine.toString());
   }
 
-  private percent(curLine: number) {
+  private percent(line: number) {
     let total = (this.docLineCount-1);
+    line -= 1;
     if (this.frontmatter === null) {
-      return Math.round(((curLine/total)+Number.EPSILON)*100);
+      const res = Math.round(((line/total)+Number.EPSILON)*100);
+      console.log(line, total, res)
+      return res
     }
-    const line = (curLine-this.frontmatter-1);
+    line -= this.frontmatter;
     total -= this.frontmatter;
-    return Math.round(((line/total)+Number.EPSILON)*100);
-  }
-
-  public headPercent(): number {
-    return this.percent(this.headLine);
-  }
-
-  public anchorPercent(): number {
-    return this.percent(this.anchorLine);
+    const res = Math.round(((line/total)+Number.EPSILON)*100);
+    console.log(line, total, res)
+    return res
   }
 
   private wordyString(

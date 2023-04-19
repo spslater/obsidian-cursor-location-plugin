@@ -368,7 +368,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       );
 
     let paddingStepEl = containerEl.createDiv();
-    paddingStepEl.createEl("h3", { text: "# of Cursors" });
+    paddingStepEl.createEl("h3", { text: "Padding Width" });
     let paddingStep = new Setting(paddingStepEl)
       .setName(
         'Width the status bar rounds to to prevent rapid changing.'
@@ -439,7 +439,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       );
 
     let fuzzyAmountEl = containerEl.createDiv();
-    fuzzyAmountEl.createEl("h3", { text: "Selecion Mode" });
+    fuzzyAmountEl.createEl("h3", { text: "Percentage Mode" });
     let fuzzyAmount = new Setting(fuzzyAmountEl)
       .setName(
         "When showing percents, include "

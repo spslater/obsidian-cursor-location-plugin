@@ -9,7 +9,7 @@ import * as c from "src/constants";
 
 
 function frontmatter(doc: Text, settings: CursorLocationSettings): number {
-  if (!settings.wordyDisplay || !settings.includeFrontmatter) return null;
+  if (!settings.wordyDisplay || settings.includeFrontmatter) return null;
   const result: RegExpMatchArray = doc.toString().match(c.FRONTMATTER);
   return result ? doc.lineAt(result[0].length).number : null;
 }
