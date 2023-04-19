@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   statusBarPadding: false,
   paddingStep: 9,
   wordyDisplay: true,
-  fuzzyAmount: "verywordy",
+  fuzzyAmount: "strictpercent",
   includeFrontmatter: false,
   frontmatterString: "frontmatter",
 };
@@ -83,7 +83,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
                 `unable to parse new value into integer: ${value}`
               );
               cursorWarningSection.setText(
-                `"${value}" is not a number, unable to save.`
+                `"${value}" is not a full number, unable to save.`
               );
             }
           })
@@ -371,7 +371,9 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     paddingStepEl.createEl("h3", { text: "Padding Width" });
     let paddingStep = new Setting(paddingStepEl)
       .setName(
-        'Width the status bar rounds to to prevent rapid changing.'
+        "Amount the status bar will round to when padding. \
+        For example, with the default value of '9' the status bar \
+        could be set to a width of 81 if the contents width is 78."
       )
       .addText((text) =>
         text
@@ -389,7 +391,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
                 `unable to parse new value into integer: ${value}`
               );
               paddingStepWarningSection.setText(
-                `"${value}" is not a number, unable to save.`
+                `"${value}" is not a full number, unable to save.`
               );
             }
           })
@@ -442,7 +444,14 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     fuzzyAmountEl.createEl("h3", { text: "Percentage Mode" });
     let fuzzyAmount = new Setting(fuzzyAmountEl)
       .setName(
-        "When showing percents, include "
+        "How many words versus percent numbers to display. <br /> \
+        * Very Wordy: only uses words, splits the document into 5ths <br /> \
+        * A Little Wordy: only uses words, splits the document into 3rds <br /> \
+        * Strict Percentages: Will say at the top and bottom, and then percentages from 1% to 99% <br /> \
+        * Low Fuzzy Percentages: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document <br /> \
+        * High Fuzzy Percentages: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document <br /> \
+        * Only Percentages: Shows percentages throughout the document, no words are used <br /> \
+        "
       )
       .addDropdown((cb) =>
         cb
@@ -462,7 +471,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
           })
       );
     new Setting(fuzzyAmountEl)
-      .setName("Reset to default value of 'Very Wordy'")
+      .setName("Reset to default value of 'Strict Percentages'")
       .addButton((cb) =>
         cb.setButtonText("Reset").onClick(async () => {
           this.resetComponent(fuzzyAmount, "fuzzyAmount");
@@ -471,7 +480,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       );
 
     let includeFrontmatterEl = containerEl.createDiv();
-    includeFrontmatterEl.createEl("h3", { text: "Display as Percent" });
+    includeFrontmatterEl.createEl("h3", { text: "Include Frontmatter" });
     let includeFrontmatter = new Setting(includeFrontmatterEl)
       .setName("Include the frontmatter as part of the document percentage")
       .addToggle((cb) =>
