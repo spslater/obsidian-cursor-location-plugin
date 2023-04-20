@@ -1,3 +1,41 @@
+export interface CursorLocationSettings {
+  [index: string]: number | string | boolean;
+  numberCursors: number;
+  selectionMode: string;
+  displayCharCount: boolean;
+  displayPattern: string;
+  rangeSeperator: string;
+  cursorSeperator: string;
+  displayTotalLines: boolean;
+  displayCursorLines: boolean;
+  cursorLinePattern: string;
+  statusBarPadding: boolean;
+  paddingStep: number;
+  wordyDisplay: boolean;
+  fuzzyAmount: string;
+  includeFrontmatter: boolean;
+  frontmatterString: string;
+}
+
+export const DEFAULT_SETTINGS: CursorLocationSettings = {
+  numberCursors: 1,
+  selectionMode: "full",
+  displayCharCount: true,
+  displayPattern: "ch:ln/ct",
+  cursorSeperator: " / ",
+  rangeSeperator: "->",
+  displayTotalLines: true,
+  displayCursorLines: false,
+  cursorLinePattern: "[lc]",
+  statusBarPadding: false,
+  paddingStep: 9,
+  wordyDisplay: true,
+  fuzzyAmount: "strictpercent",
+  includeFrontmatter: false,
+  frontmatterString: "frontmatter",
+};
+
+
 export const MIDDLEPATTERN = /^.*(ln|ch).*?ct.*?(ln|ch).*/i;
 export const BEGINPATTERN = /^.*ct.*((ln|ch).*?(ln|ch).*)/i;
 export const ENDPATTERN = /(.*(ln|ch).*?(ln|ch)).*?ct.*$/i;

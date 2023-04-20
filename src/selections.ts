@@ -1,5 +1,5 @@
 import { Text, SelectionRange } from "@codemirror/state";
-import type { CursorLocationSettings } from "src/settings";
+import type { CursorLocationSettings } from "src/constants";
 import { format, closest } from "src/helpers";
 import * as c from "src/constants";
 

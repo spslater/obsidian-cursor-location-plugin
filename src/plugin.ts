@@ -2,9 +2,9 @@ import { PluginValue, EditorView, ViewPlugin } from "@codemirror/view";
 import { Text } from "@codemirror/state";
 
 import type CursorLocation from "src/main";
-import type { CursorLocationSettings } from "src/settings";
+import type { CursorLocationSettings } from "src/constants";
 import { generateSelections, Selections, CursorData } from "src/selections";
-import { format, closest } from "src/helpers";
+import { format } from "src/helpers";
 import * as c from "src/constants";
 
 
