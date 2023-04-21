@@ -5,6 +5,7 @@ export interface CursorLocationSettings {
   displayCharCount: boolean;
   displayPattern: string;
   rangeSeperator: string;
+  displayCursorLineCount: boolean;
   cursorSeperator: string;
   displayTotalLines: boolean;
   displayCursorLines: boolean;
@@ -24,6 +25,7 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   displayPattern: "ch:ln/ct",
   cursorSeperator: " / ",
   rangeSeperator: "->",
+  displayCursorLineCount: true,
   displayTotalLines: true,
   displayCursorLines: false,
   cursorLinePattern: "[lc]",

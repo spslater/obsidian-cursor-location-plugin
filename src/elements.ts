@@ -50,29 +50,33 @@ export class SettingElement {
     return this.element.createEl("p",{text:"",attr:{style:"color:red"}});
   }
 
-  public basicOnChange(setting: string) {
+  public basicOnChange() {
     return async (value: any) => {
-      if (this.plugin.settings[setting] != value) {
-        console.log(`changing ${setting}: ${value}`);
+      if (this.plugin.settings[this.name] != value) {
+        console.log(`changing ${this.name}: ${value}`);
       }
-      this.plugin.settings[setting] = value?.trim();
+      if (typeof DEFAULT_SETTINGS[this.name] === "boolean") {
+        this.plugin.settings[this.name] = value;
+      } else {
+        this.plugin.settings[this.name] = value?.trim();
+      }
       await this.plugin.saveSettings();
     }
   }
 
-  public numberOnChange(setting: string) {
+  public numberOnChange() {
     return async (value: any) => {
       let parsedValue = parseInt(value);
       if (!isNaN(parsedValue)) {
-        if (this.plugin.settings[setting] != value) {
-          console.log(`changing ${setting}: ${value}`);
+        if (this.plugin.settings[this.name] != value) {
+          console.log(`changing ${this.name}: ${value}`);
         }
         this.warning.setText("");
-        this.plugin.settings[setting] = parsedValue;
+        this.plugin.settings[this.name] = parsedValue;
         await this.plugin.saveSettings();
       } else {
         console.log(
-          `unable to update ${setting}, `,
+          `unable to update ${this.name}, `,
           `unable to parse new value into integer: ${value}`
         );
         this.warning.setText(
@@ -95,7 +99,7 @@ export class NumberCursors extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings?.numberCursors?.toString())
-          .onChange(this.numberOnChange("numberCursors"))
+          .onChange(this.numberOnChange())
       });
     this.warning = this.createWarning();
     this.resetSetting();
@@ -118,7 +122,7 @@ export class SelectionMode extends SettingElement {
           .setValue(
             this.plugin.settings.selectionMode || DEFAULT_SETTINGS.selectionMode
           )
-          .onChange(this.basicOnChange("selectionMode"))
+          .onChange(this.basicOnChange())
       });
 
     this.resetSetting();
@@ -138,7 +142,7 @@ export class DisplayCharCount extends SettingElement {
               ? this.plugin.settings.displayCharCount
               : DEFAULT_SETTINGS.displayCharCount
           )
-          .onChange(this.basicOnChange("displayCharCount"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -146,7 +150,7 @@ export class DisplayCharCount extends SettingElement {
 
 export class DisplayTotalLineCount extends SettingElement {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Display Total Line Count", plugin, "displayTotalLineCount")
+    super(container, "Display Total Line Count", plugin, "displayTotalLines")
 
     this.setting = new Setting(this.element)
       .setName("Display the total number of lines selected.")
@@ -157,7 +161,7 @@ export class DisplayTotalLineCount extends SettingElement {
               ? this.plugin.settings.displayTotalLines
               : DEFAULT_SETTINGS.displayTotalLines
           )
-          .onChange(this.basicOnChange("displayTotalLines"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -179,7 +183,7 @@ export class DisplayPattern extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings.displayPattern)
-          .onChange(this.basicOnChange("displayPattern"));
+          .onChange(this.basicOnChange());
       });
     this.resetSetting();
   }
@@ -198,7 +202,7 @@ export class CursorSeperator extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings.cursorSeperator)
-          .onChange(this.basicOnChange("cursorSeperator"));
+          .onChange(this.basicOnChange());
       });
     this.resetSetting();
   }
@@ -217,7 +221,7 @@ export class RangeSeperator extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings.rangeSeperator)
-          .onChange(this.basicOnChange("rangeSeperator"));
+          .onChange(this.basicOnChange());
       });
     this.resetSetting();
   }
@@ -236,7 +240,7 @@ export class DisplayCursorLineCount extends SettingElement {
               ? this.plugin.settings.displayCursorLines
               : DEFAULT_SETTINGS.displayCursorLines
           )
-          .onChange(this.basicOnChange("displayCursorLines"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -256,7 +260,7 @@ export class CursorLinePattern extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings.cursorLinePattern)
-          .onChange(this.basicOnChange("cursorLinePattern"));
+          .onChange(this.basicOnChange());
       });
     this.resetSetting();
   }
@@ -276,7 +280,7 @@ export class StatusBarPadding extends SettingElement {
               ? this.plugin.settings.statusBarPadding
               : DEFAULT_SETTINGS.statusBarPadding
           )
-          .onChange(this.basicOnChange("statusBarPadding"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -296,7 +300,7 @@ export class PaddingStep extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings?.paddingStep?.toString())
-          .onChange(this.numberOnChange("paddingStep"))
+          .onChange(this.numberOnChange())
       });
     this.warning = this.createWarning();
     this.resetSetting();
@@ -317,7 +321,7 @@ export class WordyDisplay extends SettingElement {
               ? this.plugin.settings.wordyDisplay
               : DEFAULT_SETTINGS.wordyDisplay
           )
-          .onChange(this.basicOnChange("wordyDisplay"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -350,7 +354,7 @@ export class FuzzyAmount extends SettingElement {
           .setValue(
             this.plugin.settings.fuzzyAmount || DEFAULT_SETTINGS.fuzzyAmount
           )
-          .onChange(this.basicOnChange("fuzzyAmount"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -370,7 +374,7 @@ export class IncludeFrontmatter extends SettingElement {
               ? this.plugin.settings.includeFrontmatter
               : DEFAULT_SETTINGS.includeFrontmatter
           )
-          .onChange(this.basicOnChange("includeFrontmatter"))
+          .onChange(this.basicOnChange())
       });
     this.resetSetting();
   }
@@ -391,7 +395,7 @@ export class FrontmatterString extends SettingElement {
           .setValue(
             this.plugin.settings.frontmatterString || DEFAULT_SETTINGS.frontmatterString
           )
-          .onChange(this.basicOnChange("frontmatterString"))
+          .onChange(this.basicOnChange())
       });
       this.resetSetting();
   }
