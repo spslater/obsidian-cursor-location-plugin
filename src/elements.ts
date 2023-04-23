@@ -1,14 +1,18 @@
 import { Setting, ValueComponent } from "obsidian";
 import type CursorLocation from "src/main";
 import { DEFAULT_SETTINGS } from "src/constants";
+import { showElem, hideElem } from "src/helpers";
 
 export class SettingElement {
   name: string
   element: HTMLElement
   setting: Setting
+  custom: Setting
   warning: HTMLElement
+  error: boolean
   override: string
   plugin: CursorLocation
+  children: SettingElement[]
 
   constructor(
     container: HTMLElement,
@@ -17,9 +21,10 @@ export class SettingElement {
     name: string,
     override: string = null
   ) {
-    this.name = name
-    this.plugin = plugin
-    this.override = override
+    this.name = name;
+    this.plugin = plugin;
+    this.override = override;
+    this.children = [];
 
     this.element = container.createDiv();
     this.element.createEl("h3", { text: title });
@@ -74,6 +79,7 @@ export class SettingElement {
         this.warning.setText("");
         this.plugin.settings[this.name] = parsedValue;
         await this.plugin.saveSettings();
+        this.error = false;
       } else {
         console.log(
           `unable to update ${this.name}, `,
@@ -82,8 +88,35 @@ export class SettingElement {
         this.warning.setText(
           `"${value}" is not a full number, unable to save.`
         );
+        this.error = true;
       }
     }
+  }
+
+  public toggleCustom() {
+    const isCustom = this.plugin.settings[this.name] == "custom";
+    const elem = this.custom.settingEl;
+    isCustom ? showElem(elem) : hideElem(elem);
+  }
+
+  public show() {
+    if (this.element) showElem(this.element);
+    if (this.warning) showElem(this.warning);
+    this.showChildren();
+  }
+
+  public showChildren() {
+    this.children.forEach(c => c.show());
+  }
+
+  public hide() {
+    if (this.element) hideElem(this.element);
+    if (this.warning) hideElem(this.warning);
+    this.hideChildren();
+  }
+
+  public hideChildren() {
+    this.children.forEach(c => c.hide());
   }
 }
 
@@ -99,10 +132,20 @@ export class NumberCursors extends SettingElement {
       .addText((text) => {
         text
           .setValue(this.plugin.settings?.numberCursors?.toString())
-          .onChange(this.numberOnChange())
+          .onChange(this.onChange())
       });
     this.warning = this.createWarning();
     this.resetSetting();
+  }
+
+  private onChange() {
+    return async (value: any) => {
+      await this.numberOnChange()(value);
+      if (!this.error) {
+        const num = this.plugin.settings.numberCursors;
+        num == 1 ? this.hideChildren() : this.showChildren();
+      }
+    }
   }
 }
 
@@ -116,15 +159,14 @@ export class SelectionMode extends SettingElement {
       )
       .addDropdown((cb) => {
         cb
+          .addOption("full",  "Full Selection")
           .addOption("begin", "Beginning")
-          .addOption("end", "End")
-          .addOption("full", "Full Selection")
+          .addOption("end",   "End")
           .setValue(
             this.plugin.settings.selectionMode || DEFAULT_SETTINGS.selectionMode
           )
           .onChange(this.basicOnChange())
       });
-
     this.resetSetting();
   }
 }
@@ -191,21 +233,65 @@ export class DisplayPattern extends SettingElement {
 
 export class CursorSeperator extends SettingElement {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Cursor Seperator", plugin, "cursorSeperator")
+    super(container, "Cursor Seperator", plugin, "cursorSeperatorOption")
 
     this.setting = new Setting(this.element)
       .setName(
         "String to seperate multiple curor locations when \
-          `# of Cursors` is greater than 1. Consecutive whitespace \
-          is squashed to 1 space (per HTML rules)."
+        `# of Cursors` is greater than 1. Selecting `custom` \
+        will let you type out your own"
+      )
+      .addDropdown((cb) => {
+        cb
+          .addOption("slash", "slash `/`")
+          .addOption("pipe", "pipe `|`")
+          .addOption("tilde", "tilde `~`")
+          .addOption("ampersand", "ampersand `&`")
+          .addOption("custom", "custom")
+          .setValue(
+            this.plugin.settings.cursorSeperatorOption
+            || DEFAULT_SETTINGS.cursorSeperatorOption
+          )
+          .onChange(this.onChange())
+      });
+
+    this.custom = new Setting(this.element)
+      .setName(
+        "String will be padded by a space on each side. \
+        Consecutive whitespace is squashed to 1 space (per HTML rules). \
+        For example: '|' will be displayed as ' | '"
       )
       .addText((text) => {
         text
           .setValue(this.plugin.settings.cursorSeperator)
-          .onChange(this.basicOnChange());
+          .onChange(this.customOnChange())
       });
     this.resetSetting();
+    this.toggleCustom()
   }
+
+  private onChange() {
+    return async (value: any) => {
+      await this.basicOnChange()(value);
+      this.toggleCustom();
+    }
+  }
+
+  private customOnChange() {
+    return async (value: any) => {
+      if (this.plugin.settings["cursorSeperator"] != value) {
+        console.log(`changing ${"cursorSeperator"}: ${value}`);
+      }
+      if (typeof DEFAULT_SETTINGS["cursorSeperator"] === "boolean") {
+        this.plugin.settings["cursorSeperator"] = value;
+      } else {
+        this.plugin.settings["cursorSeperator"] = value?.trim();
+      }
+      await this.plugin.saveSettings();
+    }
+  }
+
+
 }
 
 export class RangeSeperator extends SettingElement {
@@ -309,8 +395,13 @@ export class PaddingStep extends SettingElement {
 
 
 export class WordyDisplay extends SettingElement {
+  percents: SettingElement[]
+  rowcol: SettingElement[]
+
   constructor(container: HTMLElement, plugin: CursorLocation) {
     super(container, "Display as Percent", plugin, "wordyDisplay")
+    this.percents = []
+    this.rowcol = []
 
     this.setting = new Setting(this.element)
       .setName("Display percent thru the document instead of line number")
@@ -321,9 +412,26 @@ export class WordyDisplay extends SettingElement {
               ? this.plugin.settings.wordyDisplay
               : DEFAULT_SETTINGS.wordyDisplay
           )
-          .onChange(this.basicOnChange())
+          .onChange(this.onChange())
       });
     this.resetSetting();
+  }
+
+  private onChange() {
+    return async (value: boolean) => {
+      await this.basicOnChange()(value)
+      this.showSettings(value);
+    }
+  }
+
+  public showSettings(isWordy: boolean) {
+    if (isWordy) {
+      this.percents.forEach(s => s.show());
+      this.rowcol.forEach(s => s.hide())
+    } else {
+      this.percents.forEach(s => s.hide());
+      this.rowcol.forEach(s => s.show())
+    }
   }
 }
 
@@ -334,23 +442,23 @@ export class FuzzyAmount extends SettingElement {
 
     this.setting = new Setting(this.element)
       .setName(
-        "How many words versus percent numbers to display. <br /> \
-        * Very Wordy: only uses words, splits the document into 5ths <br /> \
-        * A Little Wordy: only uses words, splits the document into 3rds <br /> \
-        * Strict Percentages: Will say at the top and bottom, and then percentages from 1% to 99% <br /> \
-        * Low Fuzzy Percentages: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document <br /> \
-        * High Fuzzy Percentages: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document <br /> \
-        * Only Percentages: Shows percentages throughout the document, no words are used <br /> \
+        "How many words versus percent numbers to display. \
+        * Very Wordy: only uses words, splits the document into 5ths \
+        * A Little Wordy: only uses words, splits the document into 3rds \
+        * Strict Percentages: Will say at the top and bottom, and then percentages from 1% to 99% \
+        * Low Fuzzy Percentages: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document \
+        * High Fuzzy Percentages: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document \
+        * Only Percentages: Shows percentages throughout the document, no words are used \
         "
       )
       .addDropdown((cb) => {
         cb
-          .addOption("verywordy", "Very Wordy")
-          .addOption("littewordy", "Little Wordy")
           .addOption("strictpercent", "Strict Percentages")
           .addOption("lowfuzzypercent", "Low Fuzzy Percentages")
           .addOption("highfuzzypercent", "High Fuzzy Percentages")
           .addOption("onlypercent", "Only Percentages")
+          .addOption("verywordy", "Very Wordy")
+          .addOption("littewordy", "Little Wordy")
           .setValue(
             this.plugin.settings.fuzzyAmount || DEFAULT_SETTINGS.fuzzyAmount
           )
@@ -392,13 +500,46 @@ export class FrontmatterString extends SettingElement {
           .addOption("frontmatter", "frontmatter")
           .addOption("metadata", "metadata")
           .addOption("preamble", "preamble")
+          .addOption("custom", "custom")
           .setValue(
             this.plugin.settings.frontmatterString || DEFAULT_SETTINGS.frontmatterString
           )
-          .onChange(this.basicOnChange())
+          .onChange(this.onChange())
       });
-      this.resetSetting();
+    this.custom = new Setting(this.element)
+      .setName(
+        "If you don't like the options provided, \
+        you can set the frontmatter to whaterver \
+        you want with this."
+      )
+      .addText((text) => {
+        text
+          .setValue(this.plugin.settings?.frontmatterStringCustom)
+          .onChange(this.customOnChange())
+      });
+    this.resetSetting();
+    this.toggleCustom();
+  }
+
+  private onChange() {
+    return async (value: string) => {
+      await this.basicOnChange()(value)
+      this.toggleCustom();
+    }
+  }
+
+  private customOnChange() {
+    return async (value: any) => {
+      if (this.plugin.settings["frontmatterStringCustom"] != value) {
+        console.log(`changing ${"frontmatterStringCustom"}: ${value}`);
+      }
+      if (typeof DEFAULT_SETTINGS["frontmatterStringCustom"] === "boolean") {
+        this.plugin.settings["frontmatterStringCustom"] = value;
+      } else {
+        this.plugin.settings["frontmatterStringCustom"] = value?.trim();
+      }
+      await this.plugin.saveSettings();
+    }
   }
 }
-
 

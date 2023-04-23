@@ -14,6 +14,14 @@ function frontmatter(doc: Text, settings: CursorLocationSettings): number {
   return result ? doc.lineAt(result[0].length).number : null;
 }
 
+function getSeperator(settings: CursorLocationSettings): string {
+  let seperator = settings.cursorSeperatorOption == "custom"
+    ? settings.cursorSeperator
+    : c.CURSORSEPERATOR.get(settings.cursorSeperatorOption);
+  seperator.trim()
+  return ` ${seperator} `
+}
+
 class EditorPlugin implements PluginValue {
   private hasPlugin: boolean;
   private view: EditorView;
@@ -68,7 +76,8 @@ class EditorPlugin implements PluginValue {
         cursors.forEach((cursor) => {
           cursorStrings.push(this.wordyDisplay(cursor))
         });
-        display = cursorStrings.join(settings.cursorSeperator);
+        const seperator = getSeperator(settings);
+        display = cursorStrings.join(seperator);
       } else {
         display = format(c.MULTCURSORS, cursors.length);
       }
@@ -81,9 +90,11 @@ class EditorPlugin implements PluginValue {
           cursors.forEach((value) => {
             cursorStrings.push(this.rowColDisplay(value, true, true));
           });
-          display = cursorStrings.join(settings.cursorSeperator);
+          const seperator: string = getSeperator(settings);
+          display = cursorStrings.join(seperator);
+          console.log(seperator, display);
           if (/ct/.test(settings.displayPattern)) {
-            display += settings.cursorSeperator + docLines;
+            display += seperator + docLines;
           }
         } else {
           display = format(c.MULTCURSORS, cursors.length);
@@ -148,18 +159,21 @@ class EditorPlugin implements PluginValue {
   private wordyDisplay(cursor: CursorData): string {
     let value: string;
     const settings = this.plugin.settings;
+    const frontmatterString = settings.frontmatterString == "custom" ?
+      settings.frontmatterStringCustom :
+      settings.frontmatterString;
 
     if (settings.selectionMode == "begin") {
-      value = cursor.anchorWordy(settings.fuzzyAmount, settings.frontmatterString);
+      value = cursor.anchorWordy(settings.fuzzyAmount, frontmatterString);
     } else if (settings.selectionMode == "end") {
-      value = cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+      value = cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     } else if (cursor.highlightedChars == 0) {
-      value = cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+      value = cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     } else {
       value =
-        cursor.anchorWordy(settings.fuzzyAmount, settings.frontmatterString) +
+        cursor.anchorWordy(settings.fuzzyAmount, frontmatterString) +
         settings.rangeSeperator +
-        cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+        cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     }
     // if (displayLines && settings.displayCursorLines) {
     //   let numberLines = Math.abs(cursor.anchorLine - cursor.headLine) + 1;

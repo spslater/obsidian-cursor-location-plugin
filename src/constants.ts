@@ -6,6 +6,7 @@ export interface CursorLocationSettings {
   displayPattern: string;
   rangeSeperator: string;
   displayCursorLineCount: boolean;
+  cursorSeperatorOption: string;
   cursorSeperator: string;
   displayTotalLines: boolean;
   displayCursorLines: boolean;
@@ -16,6 +17,7 @@ export interface CursorLocationSettings {
   fuzzyAmount: string;
   includeFrontmatter: boolean;
   frontmatterString: string;
+  frontmatterStringCustom: string;
 }
 
 export const DEFAULT_SETTINGS: CursorLocationSettings = {
@@ -23,7 +25,8 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   selectionMode: "full",
   displayCharCount: true,
   displayPattern: "ch:ln/ct",
-  cursorSeperator: " / ",
+  cursorSeperatorOption: "slash",
+  cursorSeperator: "",
   rangeSeperator: "->",
   displayCursorLineCount: true,
   displayTotalLines: true,
@@ -31,10 +34,11 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   cursorLinePattern: "[lc]",
   statusBarPadding: false,
   paddingStep: 9,
-  wordyDisplay: true,
+  wordyDisplay: false,
   fuzzyAmount: "strictpercent",
   includeFrontmatter: false,
   frontmatterString: "frontmatter",
+  frontmatterStringCustom: "",
 };
 
 
@@ -56,29 +60,29 @@ export const SELECTSINGLE = ` ({})`;
 // top, near top, middle, near bottom, bottom
 // 0-19, 20-39, 40-59, 60-79, 80-100
 export const LOWRANGEWORDS = new Map([
-    [  0, "top"],
-    [ 20, "near top"],
-    [ 40, "middle"],
-    [ 60, "near bottom"],
-    [ 80, "bottom"],
-    [100, "bottom"],
-  ]);
+  [  0, "top"],
+  [ 20, "near top"],
+  [ 40, "middle"],
+  [ 60, "near bottom"],
+  [ 80, "bottom"],
+  [100, "bottom"],
+]);
 
 // top, middle, bottom
 // 0-32, 33-65, 66-99(/100)
 export const HIGHRANGEWORDS = new Map([
-[  0, "top"],
-[ 33, "middle"],
-[ 66, "bottom"],
-[ 99, "bottom"],
-[100, "bottom"],
+  [  0, "top"],
+  [ 33, "middle"],
+  [ 66, "bottom"],
+  [ 99, "bottom"],
+  [100, "bottom"],
 ]);
 
 // top, %%, bottom
 // 0, 1-99, 100
 export const HARDPERCENTWORDS = new Map([
-[0, "top"],
-[100, "bottom"],
+  [0, "top"],
+  [100, "bottom"],
 ]);
 
 // fuzzy top, %%, fuzzy bottom
@@ -86,3 +90,10 @@ export const HARDPERCENTWORDS = new Map([
 // low (10%), high (20%)
 export const LOWFUZZYPERCENT = 10;
 export const HIGHFUZZYPERCENT = 20;
+
+export const CURSORSEPERATOR = new Map([
+  ["slash", "/"],
+  ["pipe", "|"],
+  ["tilde", "~"],
+  ["ampersand", "&"],
+]);
