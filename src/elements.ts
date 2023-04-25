@@ -648,18 +648,18 @@ export class FuzzyAmount extends SettingElement {
 }
 
 
-export class IncludeFrontmatter extends SettingElement {
+export class ExcludeFrontmatter extends SettingElement {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Include Frontmatter", plugin, "includeFrontmatter")
+    super(container, "Exclude Frontmatter", plugin, "excludeFrontmatter")
 
     this.setting = new Setting(this.element)
-      .setName("Include the frontmatter as part of the document percentage")
+      .setName("Exclude the frontmatter as part of the document percentage")
       .addToggle((cb) => {
         cb
           .setValue(
-            this.plugin.settings.includeFrontmatter != null
-              ? this.plugin.settings.includeFrontmatter
-              : DEFAULT_SETTINGS.includeFrontmatter
+            this.plugin.settings.excludeFrontmatter != null
+              ? this.plugin.settings.excludeFrontmatter
+              : DEFAULT_SETTINGS.excludeFrontmatter
           )
           .onChange(this.onChange())
       });
@@ -674,13 +674,13 @@ export class IncludeFrontmatter extends SettingElement {
   }
 
   public showChildren() {
-    if (this.plugin.settings.includeFrontmatter) {
+    if (this.plugin.settings.excludeFrontmatter) {
       super.showChildren();
     }
   }
 
   public toggleChildren() {
-    const display = this.plugin.settings.includeFrontmatter;
+    const display = this.plugin.settings.excludeFrontmatter;
     display ? super.showChildren() : super.hideChildren();
   }
 }

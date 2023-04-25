@@ -19,7 +19,7 @@ export interface CursorLocationSettings {
   paddingStep: number;
   wordyDisplay: boolean;
   fuzzyAmount: string;
-  includeFrontmatter: boolean;
+  excludeFrontmatter: boolean;
   frontmatterString: string;
   frontmatterStringCustom: string;
 }
@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   paddingStep: 9,
   wordyDisplay: false,
   fuzzyAmount: "strictpercent",
-  includeFrontmatter: false,
+  excludeFrontmatter: false,
   frontmatterString: "frontmatter",
   frontmatterStringCustom: "",
 };

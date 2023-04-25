@@ -34,9 +34,9 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     DisplayCursorLines.children.push(CursorLinePattern);
 
     const FuzzyAmount = new e.FuzzyAmount(containerEl, this.plugin);
-    const IncludeFrontmatter = new e.IncludeFrontmatter(containerEl, this.plugin);
+    const ExcludeFrontmatter = new e.ExcludeFrontmatter(containerEl, this.plugin);
     const FrontmatterString = new e.FrontmatterString(containerEl, this.plugin);
-    IncludeFrontmatter.children.push(FrontmatterString);
+    ExcludeFrontmatter.children.push(FrontmatterString);
 
     const StatusBarPadding = new e.StatusBarPadding(containerEl, this.plugin);
     const PaddingStep = new e.PaddingStep(containerEl, this.plugin);
@@ -46,11 +46,11 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     const DisplayTotalLineCount = new e.DisplayTotalLineCount(containerEl, this.plugin);
 
     WordyDisplay.percents.push(FuzzyAmount);
-    WordyDisplay.percents.push(IncludeFrontmatter);
+    WordyDisplay.percents.push(ExcludeFrontmatter);
     WordyDisplay.rowcol.push(DisplayPattern);
     WordyDisplay.rowcol.push(DisplayCursorLines);
 
-    IncludeFrontmatter.toggleChildren();
+    ExcludeFrontmatter.toggleChildren();
     NumberCursors.toggleChildren();
     SelectionMode.toggleChildren();
     DisplayCursorLines.toggleChildren();
@@ -71,7 +71,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       PaddingStep,
       WordyDisplay,
       FuzzyAmount,
-      IncludeFrontmatter,
+      ExcludeFrontmatter,
       FrontmatterString,
     ];
 
