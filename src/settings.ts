@@ -19,12 +19,10 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     const NumberCursors = new e.NumberCursors(containerEl, this.plugin);
     const CursorSeperator = new e.CursorSeperator(containerEl, this.plugin);
     NumberCursors.children.push(CursorSeperator);
-    NumberCursors.toggleChildren();
 
     const SelectionMode = new e.SelectionMode(containerEl, this.plugin);
     const RangeSeperator = new e.RangeSeperator(containerEl, this.plugin);
     SelectionMode.children.push(RangeSeperator);
-    SelectionMode.toggleChildren();
 
     const WordyDisplay = new e.WordyDisplay(containerEl, this.plugin);
     // Add a Dropdown "Pattern" option, maybe switch Display Pattern
@@ -34,17 +32,15 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     const DisplayCursorLines = new e.DisplayCursorLines(containerEl, this.plugin);
     const CursorLinePattern = new e.CursorLinePattern(containerEl, this.plugin);
     DisplayCursorLines.children.push(CursorLinePattern);
-    DisplayCursorLines.toggleChildren();
-
-    const StatusBarPadding = new e.StatusBarPadding(containerEl, this.plugin);
-    const PaddingStep = new e.PaddingStep(containerEl, this.plugin);
-    StatusBarPadding.children.push(PaddingStep);
-    StatusBarPadding.toggleChildren();
 
     const FuzzyAmount = new e.FuzzyAmount(containerEl, this.plugin);
     const IncludeFrontmatter = new e.IncludeFrontmatter(containerEl, this.plugin);
     const FrontmatterString = new e.FrontmatterString(containerEl, this.plugin);
     IncludeFrontmatter.children.push(FrontmatterString);
+
+    const StatusBarPadding = new e.StatusBarPadding(containerEl, this.plugin);
+    const PaddingStep = new e.PaddingStep(containerEl, this.plugin);
+    StatusBarPadding.children.push(PaddingStep);
 
     const DisplayCharCount = new e.DisplayCharCount(containerEl, this.plugin);
     const DisplayTotalLineCount = new e.DisplayTotalLineCount(containerEl, this.plugin);
@@ -53,6 +49,12 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     WordyDisplay.percents.push(IncludeFrontmatter);
     WordyDisplay.rowcol.push(DisplayPattern);
     WordyDisplay.rowcol.push(DisplayCursorLines);
+
+    IncludeFrontmatter.toggleChildren();
+    NumberCursors.toggleChildren();
+    SelectionMode.toggleChildren();
+    DisplayCursorLines.toggleChildren();
+    StatusBarPadding.toggleChildren();
     WordyDisplay.showSettings();
 
     const cursorLocationSettings: e.SettingElement[] = [
@@ -82,6 +84,11 @@ export class CursorLocationSettingTab extends PluginSettingTab {
           console.log("resetting all values to their defaults");
           cursorLocationSettings.forEach(setting => setting.resetComponent());
           await this.plugin.saveSettings();
+          NumberCursors.toggleChildren();
+          SelectionMode.toggleChildren();
+          DisplayCursorLines.toggleChildren();
+          StatusBarPadding.toggleChildren();
+          WordyDisplay.showSettings();
         })
       );
   }

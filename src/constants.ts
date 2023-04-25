@@ -3,6 +3,7 @@ export interface CursorLocationSettings {
   numberCursors: number;
   selectionMode: string;
   displayCharCount: boolean;
+  displayPatternOption: string;
   displayPattern: string;
   rangeSeperatorOption: string;
   rangeSeperator: string;
@@ -11,8 +12,10 @@ export interface CursorLocationSettings {
   cursorSeperator: string;
   displayTotalLines: boolean;
   displayCursorLines: boolean;
+  cursorLinePatternOption: string;
   cursorLinePattern: string;
   statusBarPadding: boolean;
+  paddingStepOption: string;
   paddingStep: number;
   wordyDisplay: boolean;
   fuzzyAmount: string;
@@ -25,7 +28,8 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   numberCursors: 1,
   selectionMode: "full",
   displayCharCount: true,
-  displayPattern: "ch:ln/ct",
+  displayPatternOption: "clt",
+  displayPattern: "",
   cursorSeperatorOption: "slash",
   cursorSeperator: "",
   rangeSeperatorOption: "arrow",
@@ -33,8 +37,10 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   displayCursorLineCount: true,
   displayTotalLines: true,
   displayCursorLines: false,
-  cursorLinePattern: "[lc]",
+  cursorLinePatternOption: "square",
+  cursorLinePattern: "",
   statusBarPadding: false,
+  paddingStepOption: "medium",
   paddingStep: 9,
   wordyDisplay: false,
   fuzzyAmount: "strictpercent",
@@ -104,4 +110,25 @@ export const RANGESEPERATOR = new Map([
   ["arrow", "→"],
   ["dash", "-"],
   ["tilde", "~"],
+]);
+
+export const PADDINGSTEP = new Map([
+  ["low", 6],
+  ["medium", 12],
+  ["high", 24],
+]);
+
+export const CURSORLINEPATTERN = new Map([
+  ["square", "[lc]"],
+  ["curly", "{lc}"],
+  ["parens", "(lc)"],
+  ["pointy", "<lc>"],
+]);
+
+export const DISPLAYPATTERN = new Map([
+  ["clt", "ch:ln/ct"],
+  ["lct", "ln:ch/ct"],
+  ["clt2", "ch ln-ct"],
+  ["clts", "ch ln ct"],
+  ["lcts", "ln ch ct"],
 ]);

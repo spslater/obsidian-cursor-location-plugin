@@ -28,6 +28,12 @@ function getRangeSeperator(settings: CursorLocationSettings): string {
     : c.RANGESEPERATOR.get(settings.rangeSeperatorOption);
 }
 
+function getDisplayPattern(settings: CursorLocationSettings): string {
+  return settings.displayPatternOption == "custom"
+    ? settings.displayPattern
+    : c.DISPLAYPATTERN.get(settings.displayPatternOption);
+}
+
 class EditorPlugin implements PluginValue {
   private hasPlugin: boolean;
   private view: EditorView;
@@ -80,7 +86,7 @@ class EditorPlugin implements PluginValue {
       } else if (cursors.length <= settings.numberCursors) {
         let cursorStrings: string[] = [];
         cursors.forEach((cursor) => {
-          cursorStrings.push(this.wordyDisplay(cursor))
+          cursorStrings.push(this.wordyDisplay(cursor, true))
         });
         const seperator = getCursorSeperator(settings);
         display = cursorStrings.join(seperator);
@@ -98,8 +104,7 @@ class EditorPlugin implements PluginValue {
           });
           const seperator: string = getCursorSeperator(settings);
           display = cursorStrings.join(seperator);
-          console.log(seperator, display);
-          if (/ct/.test(settings.displayPattern)) {
+          if (/ct/.test(getDisplayPattern(settings))) {
             display += seperator + docLines;
           }
         } else {
@@ -110,7 +115,9 @@ class EditorPlugin implements PluginValue {
         }
 
         if (settings.statusBarPadding) {
-          const step = settings.paddingStep;
+          const step = settings.paddingStepOption == "custom"
+            ? settings.paddingStep
+            : c.PADDINGSTEP.get(settings.paddingStepOption);
           const width = this.calculateWidth(display);
           let padWidth: number = Math.ceil(width/step)*step;
           if (width == padWidth) padWidth += Math.ceil(step/3);
@@ -141,17 +148,18 @@ class EditorPlugin implements PluginValue {
   ): string {
     let value: string;
     const settings = this.plugin.settings;
+    const displayPattern = getDisplayPattern(settings);
     if (settings.selectionMode == "begin") {
-      value = selection.anchorString(settings.displayPattern, skipTotal);
+      value = selection.anchorString(displayPattern, skipTotal);
     } else if (settings.selectionMode == "end") {
-      value = selection.headString(settings.displayPattern, skipTotal);
+      value = selection.headString(displayPattern, skipTotal);
     } else if (selection.highlightedChars == 0) {
-      value = selection.headString(settings.displayPattern, skipTotal);
+      value = selection.headString(displayPattern, skipTotal);
     } else {
       value =
-        selection.anchorString(settings.displayPattern, true) +
+        selection.anchorString(displayPattern, true) +
         getRangeSeperator(settings) +
-        selection.headString(settings.displayPattern, skipTotal);
+        selection.headString(displayPattern, skipTotal);
     }
     if (displayLines && settings.displayCursorLines) {
       let numberLines = Math.abs(selection.anchorLine - selection.headLine) + 1;
@@ -162,7 +170,7 @@ class EditorPlugin implements PluginValue {
   }
 
 
-  private wordyDisplay(cursor: CursorData): string {
+  private wordyDisplay(cursor: CursorData, displayLines: boolean = false): string {
     let value: string;
     const settings = this.plugin.settings;
     const frontmatterString = settings.frontmatterString == "custom" ?
@@ -181,11 +189,11 @@ class EditorPlugin implements PluginValue {
         getRangeSeperator(settings) +
         cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     }
-    // if (displayLines && settings.displayCursorLines) {
-    //   let numberLines = Math.abs(cursor.anchorLine - cursor.headLine) + 1;
-    //   let cursorLinePattern = settings.cursorLinePattern;
-    //   value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
-    // }
+    if (displayLines && settings.displayCursorLines) {
+      let numberLines = Math.abs(cursor.anchorLine - cursor.headLine) + 1;
+      let cursorLinePattern = settings.cursorLinePattern;
+      value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
+    }
     return value;
   }
 

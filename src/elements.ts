@@ -188,13 +188,14 @@ export class SelectionMode extends SettingElement {
 
     this.setting = new Setting(this.element)
       .setName(
-        "Display just the beginning, just the end, or the full range of a selection."
+        "Display just the beginning, \
+        just the end, or the full range of a selection."
       )
       .addDropdown((cb) => {
         cb
-          .addOption("full",  "Full Selection")
+          .addOption("full", "Full Selection")
           .addOption("begin", "Beginning")
-          .addOption("end",   "End")
+          .addOption("end", "End")
           .setValue(
             this.plugin.settings.selectionMode 
             || DEFAULT_SETTINGS.selectionMode
@@ -219,7 +220,6 @@ export class SelectionMode extends SettingElement {
 
   public toggleChildren() {
     const mode = this.plugin.settings.selectionMode;
-    console.log("selection mode", mode, this.children);
     mode == "full" ? super.showChildren() : super.hideChildren();
   }
 }
@@ -262,31 +262,64 @@ export class DisplayTotalLineCount extends SettingElement {
   }
 }
 
-export class DisplayPattern extends SettingElement {
+export class DisplayPattern extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Individual Cursor Pattern", plugin, "displayPattern")
+    super(
+      container,
+      "Individual Cursor Pattern",
+      plugin,
+      "displayPatternOption",
+      "ch:ln/ct"
+    )
+    this.customName = "displayPattern"
 
     this.setting = new Setting(this.element)
-      .setName(
-        "Pattern to display location information for each cursor, \
-          `ch` is the column the cursor is at in the current line, \
-          `ln` is the current line number, \
-          `ct` is the total line numbers in the file (count). \
-          If `ct` is the first or last of the three values, \
-          it will be removed when displaying a range."
+      .setName("Pattern to display location information for each cursor.")
+      .setDesc(
+        "`ch` is the column the cursor is at in the current line, \
+        `ln` is the current line number, \
+        `ct` is the total line numbers in the file (count)."
+      )
+      .addDropdown((cb) => {
+        cb
+          .addOption("clt", "ch:ln/ct")
+          .addOption("lct", "ln:ch/ct")
+          .addOption("clt2", "ch ln-ct")
+          .addOption("clts", "ch ln ct")
+          .addOption("lcts", "ln ch ct")
+          .addOption("custom", "custom")
+          .setValue(
+            this.plugin.settings.displayPatternOption
+            || DEFAULT_SETTINGS.displayPatternOption
+          )
+          .onChange(this.basicOnChange())
+    });
+
+    this.custom = new Setting(this.element)
+      .setName("Custom pattern for display")
+      .setDesc(
+        "If `ct` is the first or last of the three values, \
+        it will be removed when displaying a range."
       )
       .addText((text) => {
         text
           .setValue(this.plugin.settings.displayPattern)
-          .onChange(this.basicOnChange());
+          .onChange(this.customOnChange())
       });
     this.resetSetting();
+    this.toggleCustom();
   }
 }
 
 export class CursorSeperator extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Cursor Seperator", plugin, "cursorSeperatorOption");
+    super(
+      container,
+      "Cursor Seperator",
+      plugin,
+      "cursorSeperatorOption",
+      "slash `/`"
+    );
     this.customName = "cursorSeperator";
 
     this.setting = new Setting(this.element)
@@ -321,13 +354,19 @@ export class CursorSeperator extends SettingElementCustom {
           .onChange(this.customOnChange())
       });
     this.resetSetting();
-    this.toggleCustom()
+    this.toggleCustom();
   }
 }
 
 export class RangeSeperator extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Range Seperator", plugin, "rangeSeperatorOption")
+    super(
+      container,
+      "Range Seperator",
+      plugin,
+      "rangeSeperatorOption",
+      "arrow '→'"
+    )
     this.customName = "rangeSeperator";
 
     this.setting = new Setting(this.element)
@@ -358,7 +397,7 @@ export class RangeSeperator extends SettingElementCustom {
       )
       .addText((text) => {
         text
-          .setValue(this.plugin.settings.rangeSeperatorOption)
+          .setValue(this.plugin.settings.rangeSeperator)
           .onChange(this.customOnChange());
       });
     this.resetSetting();
@@ -403,23 +442,46 @@ export class DisplayCursorLines extends SettingElement {
   }
 }
 
-export class CursorLinePattern extends SettingElement {
+export class CursorLinePattern extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Cursor Line Pattern", plugin, "cursorLinePattern")
+    super(
+      container,
+      "Cursor Line Pattern",
+      plugin,
+      "cursorLinePatternOption",
+      "[lc]"
+    )
+    this.customName = "cursorLinePattern"
 
     this.setting = new Setting(this.element)
+      .setName("Pattern to display number of highlighted lines for each cursor.")
+      .addDropdown((cb) => {
+        cb
+          .addOption("square", "[lc]")
+          .addOption("curly", "{lc}")
+          .addOption("parens", "(lc)")
+          .addOption("pointy", "<lc>")
+          .addOption("custom", "custom")
+          .setValue(
+            this.plugin.settings.cursorLinePatternOption
+            || DEFAULT_SETTINGS.cursorLinePatternOption
+          )
+          .onChange(this.basicOnChange())
+      });
+
+    this.custom = new Setting(this.element)
       .setName(
-        "Pattern to display number of highlighted lines for each cursor. \
-          `lc` is the line count and will not be displayed if only one line \
+          "`lc` is the line count and will not be displayed if only one line \
           is selected or 'Display Cursor Line Count' setting is `false`. \
           Leading and trailing whitespace is trimmed."
       )
       .addText((text) => {
         text
           .setValue(this.plugin.settings.cursorLinePattern)
-          .onChange(this.basicOnChange());
+          .onChange(this.customOnChange());
       });
     this.resetSetting();
+    this.toggleCustom();
   }
 }
 
@@ -462,15 +524,42 @@ export class StatusBarPadding extends SettingElement {
 }
 
 
-export class PaddingStep extends SettingElement {
+export class PaddingStep extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Padding Width", plugin, "paddingStep")
+    super(
+      container,
+      "Padding Width",
+      plugin,
+      "paddingStepOption",
+      "low `6px`"
+    )
+    this.customName = "paddingStep"
 
     this.setting = new Setting(this.element)
-      .setName(
-        "Amount the status bar will round to when padding. \
-        For example, with the default value of '9' the status bar \
-        could be set to a width of 81 if the contents width is 78."
+      .setName("Amount the status bar will round to when padding.")
+      .setDesc(
+        "For example, with the default value of '12' the status bar \
+        could be set to a width of 60 if the contents width is 55."
+      )
+      .addDropdown((cb) => {
+        cb
+          .addOption("low", "low `6px`")
+          .addOption("medium", "medium `12px`")
+          .addOption("high", "high `24px`")
+          .addOption("custom", "custom")
+          .setValue(
+            this.plugin.settings.paddingStepOption
+            || DEFAULT_SETTINGS.paddingStepOption
+          )
+          .onChange(this.basicOnChange())
+      });
+
+    this.custom = new Setting(this.element)
+      .setName("Multiples of 3 work best, though any positive value will do.")
+      .setDesc(
+        "A cursor with just the head is around 70px. \
+        A single selection with head and anchor plus totals is around 250px. \
+        3 selections like the above with individual line counts is around 500px."
       )
       .addText((text) => {
         text
@@ -479,6 +568,7 @@ export class PaddingStep extends SettingElement {
       });
     this.warning = this.createWarning();
     this.resetSetting();
+    this.toggleCustom();
   }
 }
 
@@ -530,13 +620,14 @@ export class FuzzyAmount extends SettingElement {
     super(container, "Percentage Mode", plugin, "fuzzyAmount", "Strict Percentages")
 
     this.setting = new Setting(this.element)
-      .setName("How many words vs percent numbers to display. \
-        * Very Wordy: only uses words, splits the document into 5ths \
-        * A Little Wordy: only uses words, splits the document into 3rds \
-        * Strict Percentages: Will say at the top and bottom, and then percentages from 1% to 99% \
-        * Low Fuzzy Percentages: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document \
-        * High Fuzzy Percentages: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document \
-        * Only Percentages: Shows percentages throughout the document, no words are used"
+      .setName("How many words vs percent numbers to display.")
+      .setDesc(
+        "__Very Wordy__: only uses words, splits the document into 5ths \
+        __A Little Wordy__: only uses words, splits the document into 3rds \
+        __Strict Percentages__: Will say at the top and bottom, and then percentages from 1% to 99% \
+        __Low Fuzzy Percentages__: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document \
+        __High Fuzzy Percentages__: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document \
+        __Only Percentages__: Shows percentages throughout the document, no words are used"
       )
       .addDropdown((cb) => {
         cb
@@ -570,9 +661,27 @@ export class IncludeFrontmatter extends SettingElement {
               ? this.plugin.settings.includeFrontmatter
               : DEFAULT_SETTINGS.includeFrontmatter
           )
-          .onChange(this.basicOnChange())
+          .onChange(this.onChange())
       });
     this.resetSetting();
+  }
+
+  private onChange() {
+    return async (value: any) => {
+      await this.basicOnChange()(value);
+      this.toggleChildren();
+    }
+  }
+
+  public showChildren() {
+    if (this.plugin.settings.includeFrontmatter) {
+      super.showChildren();
+    }
+  }
+
+  public toggleChildren() {
+    const display = this.plugin.settings.includeFrontmatter;
+    display ? super.showChildren() : super.hideChildren();
   }
 }
 
