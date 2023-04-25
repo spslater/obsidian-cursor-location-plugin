@@ -7,7 +7,6 @@ export class SettingElement {
   name: string
   element: HTMLElement
   setting: Setting
-  custom: Setting
   warning: HTMLElement
   error: boolean
   override: string
@@ -93,12 +92,6 @@ export class SettingElement {
     }
   }
 
-  public toggleCustom() {
-    const isCustom = this.plugin.settings[this.name] == "custom";
-    const elem = this.custom.settingEl;
-    isCustom ? showElem(elem) : hideElem(elem);
-  }
-
   public show() {
     if (this.element) showElem(this.element);
     if (this.warning) showElem(this.warning);
@@ -117,6 +110,38 @@ export class SettingElement {
 
   public hideChildren() {
     this.children.forEach(c => c.hide());
+  }
+}
+
+class SettingElementCustom extends SettingElement {
+  customName: string
+  custom: Setting
+
+  public customOnChange() {
+    return async (value: any) => {
+      if (this.plugin.settings[this.customName] != value) {
+        console.log(`changing ${this.customName}: ${value}`);
+      }
+      if (typeof DEFAULT_SETTINGS[this.customName] === "boolean") {
+        this.plugin.settings[this.customName] = value;
+      } else {
+        this.plugin.settings[this.customName] = value?.trim();
+      }
+      await this.plugin.saveSettings();
+    }
+  }
+
+  public toggleCustom() {
+    const isCustom = this.plugin.settings[this.name] == "custom";
+    const elem = this.custom.settingEl;
+    isCustom ? showElem(elem) : hideElem(elem);
+  }
+
+  public basicOnChange() {
+    return async (value: string) => {
+      await super.basicOnChange()(value)
+      this.toggleCustom();
+    }
   }
 }
 
@@ -141,11 +166,19 @@ export class NumberCursors extends SettingElement {
   private onChange() {
     return async (value: any) => {
       await this.numberOnChange()(value);
-      if (!this.error) {
-        const num = this.plugin.settings.numberCursors;
-        num == 1 ? this.hideChildren() : this.showChildren();
-      }
+      if (!this.error) this.toggleChildren();
     }
+  }
+
+  public showChildren() {
+    if (this.plugin.settings.numberCursors != 1) {
+      super.showChildren();
+    }
+  }
+
+  public toggleChildren() {
+    const num = this.plugin.settings.numberCursors;
+    num == 1 ? super.hideChildren() : super.showChildren();
   }
 }
 
@@ -163,11 +196,31 @@ export class SelectionMode extends SettingElement {
           .addOption("begin", "Beginning")
           .addOption("end",   "End")
           .setValue(
-            this.plugin.settings.selectionMode || DEFAULT_SETTINGS.selectionMode
+            this.plugin.settings.selectionMode 
+            || DEFAULT_SETTINGS.selectionMode
           )
-          .onChange(this.basicOnChange())
+          .onChange(this.onChange())
       });
     this.resetSetting();
+  }
+
+  private onChange() {
+    return async (value: any) => {
+      await this.basicOnChange()(value);
+      this.toggleChildren();
+    }
+  }
+
+  public showChildren() {
+    if (this.plugin.settings.selectionMode == "full") {
+      super.showChildren();
+    }
+  }
+
+  public toggleChildren() {
+    const mode = this.plugin.settings.selectionMode;
+    console.log("selection mode", mode, this.children);
+    mode == "full" ? super.showChildren() : super.hideChildren();
   }
 }
 
@@ -231,9 +284,10 @@ export class DisplayPattern extends SettingElement {
   }
 }
 
-export class CursorSeperator extends SettingElement {
+export class CursorSeperator extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Cursor Seperator", plugin, "cursorSeperatorOption")
+    super(container, "Cursor Seperator", plugin, "cursorSeperatorOption");
+    this.customName = "cursorSeperator";
 
     this.setting = new Setting(this.element)
       .setName(
@@ -252,14 +306,14 @@ export class CursorSeperator extends SettingElement {
             this.plugin.settings.cursorSeperatorOption
             || DEFAULT_SETTINGS.cursorSeperatorOption
           )
-          .onChange(this.onChange())
+          .onChange(this.basicOnChange())
       });
 
     this.custom = new Setting(this.element)
       .setName(
         "String will be padded by a space on each side. \
         Consecutive whitespace is squashed to 1 space (per HTML rules). \
-        For example: '|' will be displayed as ' | '"
+        For example: '/' will be displayed as ' / '"
       )
       .addText((text) => {
         text
@@ -269,53 +323,52 @@ export class CursorSeperator extends SettingElement {
     this.resetSetting();
     this.toggleCustom()
   }
-
-  private onChange() {
-    return async (value: any) => {
-      await this.basicOnChange()(value);
-      this.toggleCustom();
-    }
-  }
-
-  private customOnChange() {
-    return async (value: any) => {
-      if (this.plugin.settings["cursorSeperator"] != value) {
-        console.log(`changing ${"cursorSeperator"}: ${value}`);
-      }
-      if (typeof DEFAULT_SETTINGS["cursorSeperator"] === "boolean") {
-        this.plugin.settings["cursorSeperator"] = value;
-      } else {
-        this.plugin.settings["cursorSeperator"] = value?.trim();
-      }
-      await this.plugin.saveSettings();
-    }
-  }
-
-
 }
 
-export class RangeSeperator extends SettingElement {
+export class RangeSeperator extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Range Seperator", plugin, "rangeSeperator")
+    super(container, "Range Seperator", plugin, "rangeSeperatorOption")
+    this.customName = "rangeSeperator";
 
     this.setting = new Setting(this.element)
       .setName(
         "String to seperate the beginning and end of a selection \
           when `Selection Mode` is set to `Full Selection`. \
-          Consecutive whitespace is squashed to 1 space (per HTML rules)"
+          Selecting `custom` will let you type out your own"
+      )
+      .addDropdown((cb) => {
+        cb
+          .addOption("arrow", "arrow '→'")
+          .addOption("dash", "dash `-`")
+          .addOption("tilde", "tilde `~`")
+          .addOption("custom", "custom")
+          .setValue(
+            this.plugin.settings.rangeSeperatorOption
+            || DEFAULT_SETTINGS.rangeSeperatorOption
+          )
+          .onChange(this.basicOnChange())
+      });
+
+    this.custom = new Setting(this.element)
+      .setName(
+        "String will NOT be padded by a space on each side. \
+          Consecutive whitespace is squashed to 1 space (per HTML rules) \
+          For example: '->' will be displayed as '2->3' and ' -> ' will \
+          be displayed as '2 -> 3'"
       )
       .addText((text) => {
         text
-          .setValue(this.plugin.settings.rangeSeperator)
-          .onChange(this.basicOnChange());
+          .setValue(this.plugin.settings.rangeSeperatorOption)
+          .onChange(this.customOnChange());
       });
     this.resetSetting();
+    this.toggleCustom();
   }
 }
 
-export class DisplayCursorLineCount extends SettingElement {
+export class DisplayCursorLines extends SettingElement {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Display Cursor Line Count", plugin, "displayCursorLineCount")
+    super(container, "Display Cursor Line Count", plugin, "displayCursorLines")
 
     this.setting = new Setting(this.element)
       .setName("Display the number of lines selected by each cursor.")
@@ -326,9 +379,27 @@ export class DisplayCursorLineCount extends SettingElement {
               ? this.plugin.settings.displayCursorLines
               : DEFAULT_SETTINGS.displayCursorLines
           )
-          .onChange(this.basicOnChange())
+          .onChange(this.onChange())
       });
     this.resetSetting();
+  }
+
+  private onChange() {
+    return async (value: any) => {
+      await this.basicOnChange()(value);
+      this.toggleChildren();
+    }
+  }
+
+  public showChildren() {
+    if (this.plugin.settings.displayCursorLines) {
+      super.showChildren();
+    }
+  }
+
+  public toggleChildren() {
+    const display = this.plugin.settings.displayCursorLines;
+    display ? super.showChildren() : super.hideChildren();
   }
 }
 
@@ -366,9 +437,27 @@ export class StatusBarPadding extends SettingElement {
               ? this.plugin.settings.statusBarPadding
               : DEFAULT_SETTINGS.statusBarPadding
           )
-          .onChange(this.basicOnChange())
+          .onChange(this.onChange())
       });
     this.resetSetting();
+  }
+
+  private onChange() {
+    return async (value: any) => {
+      await this.basicOnChange()(value);
+      this.toggleChildren();
+    }
+  }
+
+  public showChildren() {
+    if (this.plugin.settings.statusBarPadding) {
+      super.showChildren();
+    }
+  }
+
+  public toggleChildren() {
+    const display = this.plugin.settings.statusBarPadding;
+    display ? super.showChildren() : super.hideChildren();
   }
 }
 
@@ -420,12 +509,12 @@ export class WordyDisplay extends SettingElement {
   private onChange() {
     return async (value: boolean) => {
       await this.basicOnChange()(value)
-      this.showSettings(value);
+      this.showSettings();
     }
   }
 
-  public showSettings(isWordy: boolean) {
-    if (isWordy) {
+  public showSettings() {
+    if (this.plugin.settings.wordyDisplay) {
       this.percents.forEach(s => s.show());
       this.rowcol.forEach(s => s.hide())
     } else {
@@ -441,15 +530,13 @@ export class FuzzyAmount extends SettingElement {
     super(container, "Percentage Mode", plugin, "fuzzyAmount", "Strict Percentages")
 
     this.setting = new Setting(this.element)
-      .setName(
-        "How many words versus percent numbers to display. \
+      .setName("How many words vs percent numbers to display. \
         * Very Wordy: only uses words, splits the document into 5ths \
         * A Little Wordy: only uses words, splits the document into 3rds \
         * Strict Percentages: Will say at the top and bottom, and then percentages from 1% to 99% \
         * Low Fuzzy Percentages: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document \
         * High Fuzzy Percentages: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document \
-        * Only Percentages: Shows percentages throughout the document, no words are used \
-        "
+        * Only Percentages: Shows percentages throughout the document, no words are used"
       )
       .addDropdown((cb) => {
         cb
@@ -460,7 +547,8 @@ export class FuzzyAmount extends SettingElement {
           .addOption("verywordy", "Very Wordy")
           .addOption("littewordy", "Little Wordy")
           .setValue(
-            this.plugin.settings.fuzzyAmount || DEFAULT_SETTINGS.fuzzyAmount
+            this.plugin.settings.fuzzyAmount
+            || DEFAULT_SETTINGS.fuzzyAmount
           )
           .onChange(this.basicOnChange())
       });
@@ -489,9 +577,10 @@ export class IncludeFrontmatter extends SettingElement {
 }
 
 
-export class FrontmatterString extends SettingElement {
+export class FrontmatterString extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
     super(container, "Frontmatter Phrase", plugin, "frontmatterString")
+    this.customName = "frontmatterStringCustom";
 
     this.setting = new Setting(this.element)
       .setName("What to call the frontmatter when cursor is inside it")
@@ -502,9 +591,10 @@ export class FrontmatterString extends SettingElement {
           .addOption("preamble", "preamble")
           .addOption("custom", "custom")
           .setValue(
-            this.plugin.settings.frontmatterString || DEFAULT_SETTINGS.frontmatterString
+            this.plugin.settings.frontmatterString
+            || DEFAULT_SETTINGS.frontmatterString
           )
-          .onChange(this.onChange())
+          .onChange(this.basicOnChange())
       });
     this.custom = new Setting(this.element)
       .setName(
@@ -519,27 +609,6 @@ export class FrontmatterString extends SettingElement {
       });
     this.resetSetting();
     this.toggleCustom();
-  }
-
-  private onChange() {
-    return async (value: string) => {
-      await this.basicOnChange()(value)
-      this.toggleCustom();
-    }
-  }
-
-  private customOnChange() {
-    return async (value: any) => {
-      if (this.plugin.settings["frontmatterStringCustom"] != value) {
-        console.log(`changing ${"frontmatterStringCustom"}: ${value}`);
-      }
-      if (typeof DEFAULT_SETTINGS["frontmatterStringCustom"] === "boolean") {
-        this.plugin.settings["frontmatterStringCustom"] = value;
-      } else {
-        this.plugin.settings["frontmatterStringCustom"] = value?.trim();
-      }
-      await this.plugin.saveSettings();
-    }
   }
 }
 

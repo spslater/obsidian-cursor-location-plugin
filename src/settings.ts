@@ -16,53 +16,44 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     containerEl.empty();
     containerEl.createDiv().createEl("h2", { text: "Cursor Information" });
 
-    const WordyDisplay = new e.WordyDisplay(containerEl, this.plugin);
-
     const NumberCursors = new e.NumberCursors(containerEl, this.plugin);
-    // Hide when NumberCursors == 1
     const CursorSeperator = new e.CursorSeperator(containerEl, this.plugin);
     NumberCursors.children.push(CursorSeperator);
+    NumberCursors.toggleChildren();
 
     const SelectionMode = new e.SelectionMode(containerEl, this.plugin);
-    // Hide when SelectionMode != Full
     const RangeSeperator = new e.RangeSeperator(containerEl, this.plugin);
     SelectionMode.children.push(RangeSeperator);
+    SelectionMode.toggleChildren();
 
-    // Totals
-    const DisplayCharCount = new e.DisplayCharCount(containerEl, this.plugin);
-    const DisplayTotalLineCount = new e.DisplayTotalLineCount(containerEl, this.plugin);
-
+    const WordyDisplay = new e.WordyDisplay(containerEl, this.plugin);
     // Add a Dropdown "Pattern" option, maybe switch Display Pattern
     // As part of the "custom" option, show the other options
     const DisplayPattern = new e.DisplayPattern(containerEl, this.plugin);
 
-    // Shows line count for individual cursors
-    const DisplayCursorLineCount = new e.DisplayCursorLineCount(containerEl, this.plugin);
+    const DisplayCursorLines = new e.DisplayCursorLines(containerEl, this.plugin);
     const CursorLinePattern = new e.CursorLinePattern(containerEl, this.plugin);
-    DisplayCursorLineCount.children.push(CursorLinePattern);
+    DisplayCursorLines.children.push(CursorLinePattern);
+    DisplayCursorLines.toggleChildren();
 
     const StatusBarPadding = new e.StatusBarPadding(containerEl, this.plugin);
     const PaddingStep = new e.PaddingStep(containerEl, this.plugin);
     StatusBarPadding.children.push(PaddingStep);
+    StatusBarPadding.toggleChildren();
 
     const FuzzyAmount = new e.FuzzyAmount(containerEl, this.plugin);
     const IncludeFrontmatter = new e.IncludeFrontmatter(containerEl, this.plugin);
     const FrontmatterString = new e.FrontmatterString(containerEl, this.plugin);
-
-    DisplayCursorLineCount.children.push(CursorLinePattern)
-    StatusBarPadding.children.push(PaddingStep);
-
     IncludeFrontmatter.children.push(FrontmatterString);
+
+    const DisplayCharCount = new e.DisplayCharCount(containerEl, this.plugin);
+    const DisplayTotalLineCount = new e.DisplayTotalLineCount(containerEl, this.plugin);
 
     WordyDisplay.percents.push(FuzzyAmount);
     WordyDisplay.percents.push(IncludeFrontmatter);
     WordyDisplay.rowcol.push(DisplayPattern);
-    WordyDisplay.rowcol.push(CursorSeperator);
-    WordyDisplay.rowcol.push(RangeSeperator);
-    WordyDisplay.rowcol.push(DisplayCursorLineCount);
-    WordyDisplay.rowcol.push(CursorLinePattern);
-
-    WordyDisplay.showSettings(this.plugin.settings.wordyDisplay);
+    WordyDisplay.rowcol.push(DisplayCursorLines);
+    WordyDisplay.showSettings();
 
     const cursorLocationSettings: e.SettingElement[] = [
       NumberCursors,
@@ -72,7 +63,7 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       DisplayPattern,
       CursorSeperator,
       RangeSeperator,
-      DisplayCursorLineCount,
+      DisplayCursorLines,
       CursorLinePattern,
       StatusBarPadding,
       PaddingStep,

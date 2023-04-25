@@ -4,6 +4,7 @@ export interface CursorLocationSettings {
   selectionMode: string;
   displayCharCount: boolean;
   displayPattern: string;
+  rangeSeperatorOption: string;
   rangeSeperator: string;
   displayCursorLineCount: boolean;
   cursorSeperatorOption: string;
@@ -27,7 +28,8 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   displayPattern: "ch:ln/ct",
   cursorSeperatorOption: "slash",
   cursorSeperator: "",
-  rangeSeperator: "->",
+  rangeSeperatorOption: "arrow",
+  rangeSeperator: "",
   displayCursorLineCount: true,
   displayTotalLines: true,
   displayCursorLines: false,
@@ -96,4 +98,10 @@ export const CURSORSEPERATOR = new Map([
   ["pipe", "|"],
   ["tilde", "~"],
   ["ampersand", "&"],
+]);
+
+export const RANGESEPERATOR = new Map([
+  ["arrow", "→"],
+  ["dash", "-"],
+  ["tilde", "~"],
 ]);

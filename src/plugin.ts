@@ -14,12 +14,18 @@ function frontmatter(doc: Text, settings: CursorLocationSettings): number {
   return result ? doc.lineAt(result[0].length).number : null;
 }
 
-function getSeperator(settings: CursorLocationSettings): string {
+function getCursorSeperator(settings: CursorLocationSettings): string {
   let seperator = settings.cursorSeperatorOption == "custom"
     ? settings.cursorSeperator
     : c.CURSORSEPERATOR.get(settings.cursorSeperatorOption);
   seperator.trim()
   return ` ${seperator} `
+}
+
+function getRangeSeperator(settings: CursorLocationSettings): string {
+  return settings.rangeSeperatorOption == "custom"
+    ? settings.rangeSeperator
+    : c.RANGESEPERATOR.get(settings.rangeSeperatorOption);
 }
 
 class EditorPlugin implements PluginValue {
@@ -76,7 +82,7 @@ class EditorPlugin implements PluginValue {
         cursors.forEach((cursor) => {
           cursorStrings.push(this.wordyDisplay(cursor))
         });
-        const seperator = getSeperator(settings);
+        const seperator = getCursorSeperator(settings);
         display = cursorStrings.join(seperator);
       } else {
         display = format(c.MULTCURSORS, cursors.length);
@@ -90,7 +96,7 @@ class EditorPlugin implements PluginValue {
           cursors.forEach((value) => {
             cursorStrings.push(this.rowColDisplay(value, true, true));
           });
-          const seperator: string = getSeperator(settings);
+          const seperator: string = getCursorSeperator(settings);
           display = cursorStrings.join(seperator);
           console.log(seperator, display);
           if (/ct/.test(settings.displayPattern)) {
@@ -144,7 +150,7 @@ class EditorPlugin implements PluginValue {
     } else {
       value =
         selection.anchorString(settings.displayPattern, true) +
-        settings.rangeSeperator +
+        getRangeSeperator(settings) +
         selection.headString(settings.displayPattern, skipTotal);
     }
     if (displayLines && settings.displayCursorLines) {
@@ -172,7 +178,7 @@ class EditorPlugin implements PluginValue {
     } else {
       value =
         cursor.anchorWordy(settings.fuzzyAmount, frontmatterString) +
-        settings.rangeSeperator +
+        getRangeSeperator(settings) +
         cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     }
     // if (displayLines && settings.displayCursorLines) {
