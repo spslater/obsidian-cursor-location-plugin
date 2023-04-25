@@ -33,7 +33,7 @@ export class SettingElement {
     const value = DEFAULT_SETTINGS[this.name];
     console.log(`resetting ${this.name}: ${value}`);
     let component = this.setting.components[0] as ValueComponent<any>;
-    component.setValue(value?.toString());
+    component.setValue(value);
     this.plugin.settings[this.name] = value;
     if (this.warning != null) this.warning.setText("");
   }
