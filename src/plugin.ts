@@ -2,16 +2,36 @@ import { PluginValue, EditorView, ViewPlugin } from "@codemirror/view";
 import { Text } from "@codemirror/state";
 
 import type CursorLocation from "src/main";
-import type { CursorLocationSettings } from "src/settings";
+import type { CursorLocationSettings } from "src/constants";
 import { generateSelections, Selections, CursorData } from "src/selections";
-import { format, closest } from "src/helpers";
+import { format } from "src/helpers";
 import * as c from "src/constants";
 
 
 function frontmatter(doc: Text, settings: CursorLocationSettings): number {
-  if (!settings.wordyDisplay || settings.includeFrontmatter) return null;
+  if (!settings.wordyDisplay || !settings.excludeFrontmatter) return null;
   const result: RegExpMatchArray = doc.toString().match(c.FRONTMATTER);
   return result ? doc.lineAt(result[0].length).number : null;
+}
+
+function getCursorSeperator(settings: CursorLocationSettings): string {
+  let seperator = settings.cursorSeperatorOption == "custom"
+    ? settings.cursorSeperator
+    : c.CURSORSEPERATOR.get(settings.cursorSeperatorOption);
+  seperator.trim()
+  return ` ${seperator} `
+}
+
+function getRangeSeperator(settings: CursorLocationSettings): string {
+  return settings.rangeSeperatorOption == "custom"
+    ? settings.rangeSeperator
+    : c.RANGESEPERATOR.get(settings.rangeSeperatorOption);
+}
+
+function getDisplayPattern(settings: CursorLocationSettings): string {
+  return settings.displayPatternOption == "custom"
+    ? settings.displayPattern
+    : c.DISPLAYPATTERN.get(settings.displayPatternOption);
 }
 
 class EditorPlugin implements PluginValue {
@@ -66,9 +86,10 @@ class EditorPlugin implements PluginValue {
       } else if (cursors.length <= settings.numberCursors) {
         let cursorStrings: string[] = [];
         cursors.forEach((cursor) => {
-          cursorStrings.push(this.wordyDisplay(cursor))
+          cursorStrings.push(this.wordyDisplay(cursor, true))
         });
-        display = cursorStrings.join(settings.cursorSeperator);
+        const seperator = getCursorSeperator(settings);
+        display = cursorStrings.join(seperator);
       } else {
         display = format(c.MULTCURSORS, cursors.length);
       }
@@ -81,9 +102,10 @@ class EditorPlugin implements PluginValue {
           cursors.forEach((value) => {
             cursorStrings.push(this.rowColDisplay(value, true, true));
           });
-          display = cursorStrings.join(settings.cursorSeperator);
-          if (/ct/.test(settings.displayPattern)) {
-            display += settings.cursorSeperator + docLines;
+          const seperator: string = getCursorSeperator(settings);
+          display = cursorStrings.join(seperator);
+          if (/ct/.test(getDisplayPattern(settings))) {
+            display += seperator + docLines;
           }
         } else {
           display = format(c.MULTCURSORS, cursors.length);
@@ -93,7 +115,9 @@ class EditorPlugin implements PluginValue {
         }
 
         if (settings.statusBarPadding) {
-          const step = settings.paddingStep;
+          const step = settings.paddingStepOption == "custom"
+            ? settings.paddingStep
+            : c.PADDINGSTEP.get(settings.paddingStepOption);
           const width = this.calculateWidth(display);
           let padWidth: number = Math.ceil(width/step)*step;
           if (width == padWidth) padWidth += Math.ceil(step/3);
@@ -124,17 +148,18 @@ class EditorPlugin implements PluginValue {
   ): string {
     let value: string;
     const settings = this.plugin.settings;
+    const displayPattern = getDisplayPattern(settings);
     if (settings.selectionMode == "begin") {
-      value = selection.anchorString(settings.displayPattern, skipTotal);
+      value = selection.anchorString(displayPattern, skipTotal);
     } else if (settings.selectionMode == "end") {
-      value = selection.headString(settings.displayPattern, skipTotal);
+      value = selection.headString(displayPattern, skipTotal);
     } else if (selection.highlightedChars == 0) {
-      value = selection.headString(settings.displayPattern, skipTotal);
+      value = selection.headString(displayPattern, skipTotal);
     } else {
       value =
-        selection.anchorString(settings.displayPattern, true) +
-        settings.rangeSeperator +
-        selection.headString(settings.displayPattern, skipTotal);
+        selection.anchorString(displayPattern, true) +
+        getRangeSeperator(settings) +
+        selection.headString(displayPattern, skipTotal);
     }
     if (displayLines && settings.displayCursorLines) {
       let numberLines = Math.abs(selection.anchorLine - selection.headLine) + 1;
@@ -145,27 +170,30 @@ class EditorPlugin implements PluginValue {
   }
 
 
-  private wordyDisplay(cursor: CursorData): string {
+  private wordyDisplay(cursor: CursorData, displayLines: boolean = false): string {
     let value: string;
     const settings = this.plugin.settings;
+    const frontmatterString = settings.frontmatterString == "custom" ?
+      settings.frontmatterStringCustom :
+      settings.frontmatterString;
 
     if (settings.selectionMode == "begin") {
-      value = cursor.anchorWordy(settings.fuzzyAmount, settings.frontmatterString);
+      value = cursor.anchorWordy(settings.fuzzyAmount, frontmatterString);
     } else if (settings.selectionMode == "end") {
-      value = cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+      value = cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     } else if (cursor.highlightedChars == 0) {
-      value = cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+      value = cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     } else {
       value =
-        cursor.anchorWordy(settings.fuzzyAmount, settings.frontmatterString) +
-        settings.rangeSeperator +
-        cursor.headWordy(settings.fuzzyAmount, settings.frontmatterString);
+        cursor.anchorWordy(settings.fuzzyAmount, frontmatterString) +
+        getRangeSeperator(settings) +
+        cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     }
-    // if (displayLines && settings.displayCursorLines) {
-    //   let numberLines = Math.abs(cursor.anchorLine - cursor.headLine) + 1;
-    //   let cursorLinePattern = settings.cursorLinePattern;
-    //   value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
-    // }
+    if (displayLines && settings.displayCursorLines) {
+      let numberLines = Math.abs(cursor.anchorLine - cursor.headLine) + 1;
+      let cursorLinePattern = settings.cursorLinePattern;
+      value += ` ${cursorLinePattern.replace("lc", numberLines.toString())}`;
+    }
     return value;
   }
 

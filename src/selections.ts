@@ -1,5 +1,5 @@
 import { Text, SelectionRange } from "@codemirror/state";
-import type { CursorLocationSettings } from "src/settings";
+import type { CursorLocationSettings } from "src/constants";
 import { format, closest } from "src/helpers";
 import * as c from "src/constants";
 
@@ -121,13 +121,11 @@ export class CursorData {
     line -= 1;
     if (this.frontmatter === null) {
       const res = Math.round(((line/total)+Number.EPSILON)*100);
-      console.log(line, total, res)
       return res
     }
     line -= this.frontmatter;
     total -= this.frontmatter;
     const res = Math.round(((line/total)+Number.EPSILON)*100);
-    console.log(line, total, res)
     return res
   }
 

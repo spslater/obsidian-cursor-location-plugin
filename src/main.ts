@@ -1,11 +1,8 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
-import {
-  DEFAULT_SETTINGS,
-  CursorLocationSettings,
-  CursorLocationSettingTab,
-} from "src/settings";
+import { CursorLocationSettingTab } from "src/settings";
 import { editorPlugin } from "src/plugin";
+import {DEFAULT_SETTINGS, CursorLocationSettings} from "src/constants";
 
 export default class CursorLocation extends Plugin {
   public cursorStatusBar: HTMLElement = null;

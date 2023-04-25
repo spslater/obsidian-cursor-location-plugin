@@ -8,3 +8,11 @@ export function format(raw: string, ...args: any[]) {
 export function closest(val: number, to: number) {
   return Math.floor(val/to)*to;
 }
+
+export function showElem(elem: HTMLElement) {
+  elem.removeAttribute("style");
+}
+
+export function hideElem(elem: HTMLElement) {
+  elem.setAttribute("style", "display:none;");
+}
