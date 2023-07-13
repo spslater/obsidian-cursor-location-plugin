@@ -41,8 +41,8 @@ export default class CursorLocation extends Plugin {
   }
 
   private updateShowStatus() {
-    const mode: string = this.app.workspace.getLeaf().getViewState()
-      .state?.mode;
+    const mode: string = this.app.workspace.getActiveViewOfType(obsidian.WorkspaceLeaf)
+      ?.getState()?.mode;
     this.showUpdates = mode == "source";
     if (!this.showUpdates) {
       this.cursorStatusBar.setText("");
