@@ -184,7 +184,7 @@ export class NumberCursors extends SettingElement {
 
 export class SelectionMode extends SettingElement {
   constructor(container: HTMLElement, plugin: CursorLocation) {
-    super(container, "Selecion Mode", plugin, "selectionMode", "Full Selection");
+    super(container, "Selection Mode", plugin, "selectionMode", "Full Selection");
 
     this.setting = new Setting(this.element)
       .setName(
