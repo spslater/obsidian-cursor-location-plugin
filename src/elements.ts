@@ -311,16 +311,16 @@ export class DisplayPattern extends SettingElementCustom {
   }
 }
 
-export class CursorSeperator extends SettingElementCustom {
+export class CursorSeparator extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
     super(
       container,
-      "Cursor Seperator",
+      "Cursor Separator",
       plugin,
-      "cursorSeperatorOption",
+      "cursorSeparatorOption",
       "slash `/`"
     );
-    this.customName = "cursorSeperator";
+    this.customName = "cursorSeparator";
 
     this.setting = new Setting(this.element)
       .setName(
@@ -336,8 +336,8 @@ export class CursorSeperator extends SettingElementCustom {
           .addOption("ampersand", "ampersand `&`")
           .addOption("custom", "custom")
           .setValue(
-            this.plugin.settings.cursorSeperatorOption
-            || DEFAULT_SETTINGS.cursorSeperatorOption
+            this.plugin.settings.cursorSeparatorOption
+            || DEFAULT_SETTINGS.cursorSeparatorOption
           )
           .onChange(this.basicOnChange())
       });
@@ -350,7 +350,7 @@ export class CursorSeperator extends SettingElementCustom {
       )
       .addText((text) => {
         text
-          .setValue(this.plugin.settings.cursorSeperator)
+          .setValue(this.plugin.settings.cursorSeparator)
           .onChange(this.customOnChange())
       });
     this.resetSetting();
@@ -358,16 +358,16 @@ export class CursorSeperator extends SettingElementCustom {
   }
 }
 
-export class RangeSeperator extends SettingElementCustom {
+export class RangeSeparator extends SettingElementCustom {
   constructor(container: HTMLElement, plugin: CursorLocation) {
     super(
       container,
-      "Range Seperator",
+      "Range Separator",
       plugin,
-      "rangeSeperatorOption",
+      "rangeSeparatorOption",
       "arrow '→'"
     )
-    this.customName = "rangeSeperator";
+    this.customName = "rangeSeparator";
 
     this.setting = new Setting(this.element)
       .setName(
@@ -382,8 +382,8 @@ export class RangeSeperator extends SettingElementCustom {
           .addOption("tilde", "tilde `~`")
           .addOption("custom", "custom")
           .setValue(
-            this.plugin.settings.rangeSeperatorOption
-            || DEFAULT_SETTINGS.rangeSeperatorOption
+            this.plugin.settings.rangeSeparatorOption
+            || DEFAULT_SETTINGS.rangeSeparatorOption
           )
           .onChange(this.basicOnChange())
       });
@@ -397,7 +397,7 @@ export class RangeSeperator extends SettingElementCustom {
       )
       .addText((text) => {
         text
-          .setValue(this.plugin.settings.rangeSeperator)
+          .setValue(this.plugin.settings.rangeSeparator)
           .onChange(this.customOnChange());
       });
     this.resetSetting();
@@ -621,13 +621,14 @@ export class FuzzyAmount extends SettingElement {
 
     this.setting = new Setting(this.element)
       .setName("How many words vs percent numbers to display.")
-      .setDesc(
-        "__Very Wordy__: only uses words, splits the document into 5ths \
-        __A Little Wordy__: only uses words, splits the document into 3rds \
-        __Strict Percentages__: Will say at the top and bottom, and then percentages from 1% to 99% \
-        __Low Fuzzy Percentages__: Will say at the top and bottom for the first and last 10%, percentages for the rest of the document \
-        __High Fuzzy Percentages__: Will say at the top and bottom for the first and last 20%, percentages for the rest of the document \
-        __Only Percentages__: Shows percentages throughout the document, no words are used"
+      .setDesc("\
+        'Strict Percentages' will say at the top and bottom, and then percentages from 1% to 99%. \
+        'Low Fuzzy Percentages' will say at the top and bottom for the first and last 10%, percentages for the rest of the document. \
+        'High Fuzzy Percentages' will say at the top and bottom for the first and last 20%, percentages for the rest of the document. \
+        'Only Percentages' shows percentages throughout the document, no words are used. \
+        'Very Wordy' only uses words, splits the document into 5ths. \
+        'Barely Wordy' only uses words, splits the document into 3rds. \
+        "
       )
       .addDropdown((cb) => {
         cb
@@ -636,7 +637,7 @@ export class FuzzyAmount extends SettingElement {
           .addOption("highfuzzypercent", "High Fuzzy Percentages")
           .addOption("onlypercent", "Only Percentages")
           .addOption("verywordy", "Very Wordy")
-          .addOption("littewordy", "Little Wordy")
+          .addOption("littewordy", "Barely Wordy")
           .setValue(
             this.plugin.settings.fuzzyAmount
             || DEFAULT_SETTINGS.fuzzyAmount

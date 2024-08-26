@@ -5,11 +5,11 @@ export interface CursorLocationSettings {
   displayCharCount: boolean;
   displayPatternOption: string;
   displayPattern: string;
-  rangeSeperatorOption: string;
-  rangeSeperator: string;
+  rangeSeparatorOption: string;
+  rangeSeparator: string;
   displayCursorLineCount: boolean;
-  cursorSeperatorOption: string;
-  cursorSeperator: string;
+  cursorSeparatorOption: string;
+  cursorSeparator: string;
   displayTotalLines: boolean;
   displayCursorLines: boolean;
   cursorLinePatternOption: string;
@@ -30,10 +30,10 @@ export const DEFAULT_SETTINGS: CursorLocationSettings = {
   displayCharCount: true,
   displayPatternOption: "clt",
   displayPattern: "",
-  cursorSeperatorOption: "slash",
-  cursorSeperator: "",
-  rangeSeperatorOption: "arrow",
-  rangeSeperator: "",
+  cursorSeparatorOption: "slash",
+  cursorSeparator: "",
+  rangeSeparatorOption: "arrow",
+  rangeSeparator: "",
   displayCursorLineCount: true,
   displayTotalLines: true,
   displayCursorLines: false,

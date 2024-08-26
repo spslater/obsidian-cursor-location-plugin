@@ -14,18 +14,18 @@ function frontmatter(doc: Text, settings: CursorLocationSettings): number {
   return result ? doc.lineAt(result[0].length).number : null;
 }
 
-function getCursorSeperator(settings: CursorLocationSettings): string {
-  let seperator = settings.cursorSeperatorOption == "custom"
-    ? settings.cursorSeperator
-    : c.CURSORSEPERATOR.get(settings.cursorSeperatorOption);
-  seperator.trim()
-  return ` ${seperator} `
+function getCursorSeparator(settings: CursorLocationSettings): string {
+  let separator = settings.cursorSeparatorOption == "custom"
+    ? settings.cursorSeparator
+    : c.CURSORSEPERATOR.get(settings.cursorSeparatorOption);
+  separator.trim()
+  return ` ${separator} `
 }
 
-function getRangeSeperator(settings: CursorLocationSettings): string {
-  return settings.rangeSeperatorOption == "custom"
-    ? settings.rangeSeperator
-    : c.RANGESEPERATOR.get(settings.rangeSeperatorOption);
+function getRangeSeparator(settings: CursorLocationSettings): string {
+  return settings.rangeSeparatorOption == "custom"
+    ? settings.rangeSeparator
+    : c.RANGESEPERATOR.get(settings.rangeSeparatorOption);
 }
 
 function getDisplayPattern(settings: CursorLocationSettings): string {
@@ -88,8 +88,8 @@ class EditorPlugin implements PluginValue {
         cursors.forEach((cursor) => {
           cursorStrings.push(this.wordyDisplay(cursor, true))
         });
-        const seperator = getCursorSeperator(settings);
-        display = cursorStrings.join(seperator);
+        const separator = getCursorSeparator(settings);
+        display = cursorStrings.join(separator);
       } else {
         display = format(c.MULTCURSORS, cursors.length);
       }
@@ -102,10 +102,10 @@ class EditorPlugin implements PluginValue {
           cursors.forEach((value) => {
             cursorStrings.push(this.rowColDisplay(value, true, true));
           });
-          const seperator: string = getCursorSeperator(settings);
-          display = cursorStrings.join(seperator);
+          const separator: string = getCursorSeparator(settings);
+          display = cursorStrings.join(separator);
           if (/ct/.test(getDisplayPattern(settings))) {
-            display += seperator + docLines;
+            display += separator + docLines;
           }
         } else {
           display = format(c.MULTCURSORS, cursors.length);
@@ -158,7 +158,7 @@ class EditorPlugin implements PluginValue {
     } else {
       value =
         selection.anchorString(displayPattern, true) +
-        getRangeSeperator(settings) +
+        getRangeSeparator(settings) +
         selection.headString(displayPattern, skipTotal);
     }
     if (displayLines && settings.displayCursorLines) {
@@ -186,7 +186,7 @@ class EditorPlugin implements PluginValue {
     } else {
       value =
         cursor.anchorWordy(settings.fuzzyAmount, frontmatterString) +
-        getRangeSeperator(settings) +
+        getRangeSeparator(settings) +
         cursor.headWordy(settings.fuzzyAmount, frontmatterString);
     }
     if (displayLines && settings.displayCursorLines) {

@@ -17,12 +17,12 @@ export class CursorLocationSettingTab extends PluginSettingTab {
     containerEl.createDiv().createEl("h2", { text: "Cursor Information" });
 
     const NumberCursors = new e.NumberCursors(containerEl, this.plugin);
-    const CursorSeperator = new e.CursorSeperator(containerEl, this.plugin);
-    NumberCursors.children.push(CursorSeperator);
+    const CursorSeparator = new e.CursorSeparator(containerEl, this.plugin);
+    NumberCursors.children.push(CursorSeparator);
 
     const SelectionMode = new e.SelectionMode(containerEl, this.plugin);
-    const RangeSeperator = new e.RangeSeperator(containerEl, this.plugin);
-    SelectionMode.children.push(RangeSeperator);
+    const RangeSeparator = new e.RangeSeparator(containerEl, this.plugin);
+    SelectionMode.children.push(RangeSeparator);
 
     const WordyDisplay = new e.WordyDisplay(containerEl, this.plugin);
     // Add a Dropdown "Pattern" option, maybe switch Display Pattern
@@ -63,8 +63,8 @@ export class CursorLocationSettingTab extends PluginSettingTab {
       DisplayCharCount,
       DisplayTotalLineCount,
       DisplayPattern,
-      CursorSeperator,
-      RangeSeperator,
+      CursorSeparator,
+      RangeSeparator,
       DisplayCursorLines,
       CursorLinePattern,
       StatusBarPadding,

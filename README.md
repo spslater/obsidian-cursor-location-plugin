@@ -14,7 +14,7 @@ This demo uses an older version of Obsidian, but the output functions the same.
 You can change the behavior via the Settings Tab.
 - `# of Cursors`: Number of cursor positions that will display before switching
     to "N cursors"
-- `Cursor Seperator`: String to seperate multiple curor locations when
+- `Cursor Separator`: String to separate multiple cursor locations when
     `# of Cursors` is greater than 1. Consecutive whitespace is squashed to 1
     space (per HTML rules).
   - This will only display if you have `# of Cursors` greater than 1
@@ -24,7 +24,7 @@ You can change the behavior via the Settings Tab.
   - `Full Selection`: Shows the range of the selection (`ch:line -> ch:line`).
       This will display a range that may go from later in the document to earlier
       if the selection is dragged backwards.
-- `Range Seperator`: String to seperate the beginning and end of a selection
+- `Range Separator`: String to separate the beginning and end of a selection
     when `Selection Mode` is set to `Full Selection`. Consecutive whitespace is
     squashed to 1 space (per HTML rules).
 - `Display as Percent`: Displays percent thru the document instead of what line
@@ -64,7 +64,7 @@ You can change the behavior via the Settings Tab.
 - `Reset`: Reset all values to the default settings
 
 ### Default Settings
-![Default Setttings](defaults.png)
+![Default Settings](defaults.png)
 
 ### Percentage Settings
 ![Percentage Settings](percentage.png)
