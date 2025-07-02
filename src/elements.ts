@@ -38,18 +38,6 @@ export class SettingElement {
     if (this.warning != null) this.warning.setText("");
   }
 
-  public resetSetting() {
-    let value = this.override ? this.override : DEFAULT_SETTINGS[this.name];
-    new Setting(this.element)
-      .setName(`Reset to default value of '${value}'`)
-      .addButton((cb) =>
-        cb.setButtonText("Reset").onClick(async () => {
-          this.resetComponent();
-          await this.plugin.saveSettings();
-        })
-      );
-  }
-
   public createWarning(): HTMLElement {
     return this.element.createEl("p",{text:"",attr:{style:"color:red"}});
   }
@@ -160,7 +148,6 @@ export class NumberCursors extends SettingElement {
           .onChange(this.onChange())
       });
     this.warning = this.createWarning();
-    this.resetSetting();
   }
 
   private onChange() {
@@ -202,7 +189,6 @@ export class SelectionMode extends SettingElement {
           )
           .onChange(this.onChange())
       });
-    this.resetSetting();
   }
 
   private onChange() {
@@ -239,7 +225,6 @@ export class DisplayCharCount extends SettingElement {
           )
           .onChange(this.basicOnChange())
       });
-    this.resetSetting();
   }
 }
 
@@ -258,7 +243,6 @@ export class DisplayTotalLineCount extends SettingElement {
           )
           .onChange(this.basicOnChange())
       });
-    this.resetSetting();
   }
 }
 
@@ -306,7 +290,6 @@ export class DisplayPattern extends SettingElementCustom {
           .setValue(this.plugin.settings.displayPattern)
           .onChange(this.customOnChange())
       });
-    this.resetSetting();
     this.toggleCustom();
   }
 }
@@ -353,7 +336,6 @@ export class CursorSeparator extends SettingElementCustom {
           .setValue(this.plugin.settings.cursorSeparator)
           .onChange(this.customOnChange())
       });
-    this.resetSetting();
     this.toggleCustom();
   }
 }
@@ -400,7 +382,6 @@ export class RangeSeparator extends SettingElementCustom {
           .setValue(this.plugin.settings.rangeSeparator)
           .onChange(this.customOnChange());
       });
-    this.resetSetting();
     this.toggleCustom();
   }
 }
@@ -420,7 +401,6 @@ export class DisplayCursorLines extends SettingElement {
           )
           .onChange(this.onChange())
       });
-    this.resetSetting();
   }
 
   private onChange() {
@@ -480,7 +460,6 @@ export class CursorLinePattern extends SettingElementCustom {
           .setValue(this.plugin.settings.cursorLinePattern)
           .onChange(this.customOnChange());
       });
-    this.resetSetting();
     this.toggleCustom();
   }
 }
@@ -501,7 +480,6 @@ export class StatusBarPadding extends SettingElement {
           )
           .onChange(this.onChange())
       });
-    this.resetSetting();
   }
 
   private onChange() {
@@ -567,7 +545,6 @@ export class PaddingStep extends SettingElementCustom {
           .onChange(this.numberOnChange())
       });
     this.warning = this.createWarning();
-    this.resetSetting();
     this.toggleCustom();
   }
 }
@@ -593,7 +570,6 @@ export class WordyDisplay extends SettingElement {
           )
           .onChange(this.onChange())
       });
-    this.resetSetting();
   }
 
   private onChange() {
@@ -644,7 +620,6 @@ export class FuzzyAmount extends SettingElement {
           )
           .onChange(this.basicOnChange())
       });
-    this.resetSetting();
   }
 }
 
@@ -664,7 +639,6 @@ export class ExcludeFrontmatter extends SettingElement {
           )
           .onChange(this.onChange())
       });
-    this.resetSetting();
   }
 
   private onChange() {
@@ -717,7 +691,6 @@ export class FrontmatterString extends SettingElementCustom {
           .setValue(this.plugin.settings?.frontmatterStringCustom)
           .onChange(this.customOnChange())
       });
-    this.resetSetting();
     this.toggleCustom();
   }
 }
