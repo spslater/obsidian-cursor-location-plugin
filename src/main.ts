@@ -41,7 +41,9 @@ export default class CursorLocation extends Plugin {
   }
 
   private updateShowStatus() {
-    const mode: string = this.app.workspace.getActiveViewOfType(MarkdownView).getMode();
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if(!view) return;
+    const mode: string = view.getMode();
     this.showUpdates = mode == "source";
     if (!this.showUpdates) {
       this.cursorStatusBar.setText("");
