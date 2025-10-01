@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, View } from "obsidian";
+import { Plugin, WorkspaceLeaf, View, MarkdownView } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { CursorLocationSettingTab } from "src/settings";
 import { editorPlugin } from "src/plugin";
@@ -41,8 +41,9 @@ export default class CursorLocation extends Plugin {
   }
 
   private updateShowStatus() {
-    const mode: string = this.app.workspace.getActiveViewOfType(View)
-      ?.getState()?.mode;
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if(!view) return;
+    const mode: string = view.getMode();
     this.showUpdates = mode == "source";
     if (!this.showUpdates) {
       this.cursorStatusBar.setText("");
